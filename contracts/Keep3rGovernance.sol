@@ -164,7 +164,7 @@ contract Governance {
     }
 
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
-        require(VOTER.getPriorVotes(msg.sender, block.number.sub(1)) > proposalThreshold(), "Governance::propose: proposer votes below proposal threshold");
+        require(VOTER.getPriorVotes(msg.sender, block.number.sub(1)) >= proposalThreshold(), "Governance::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "Governance::propose: proposal function information arity mismatch");
         require(targets.length != 0, "Governance::propose: must provide actions");
         require(targets.length <= proposalMaxOperations(), "Governance::propose: too many actions");
@@ -238,7 +238,7 @@ contract Governance {
         require(state != ProposalState.Executed, "Governance::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(VOTER.getPriorVotes(proposal.proposer, block.number.sub(1)) < proposalThreshold(), "Governance::cancel: proposer above threshold");
+        require(VOTER.getPriorVotes(proposal.proposer, block.number.sub(1)) <= proposalThreshold(), "Governance::cancel: proposer above threshold");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -346,8 +346,7 @@ contract Governance {
         emit NewDelay(delay);
     }
 
-    function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public returns (bytes32) {
-        require(msg.sender == address(this), "Timelock::queueTransaction: Call must come from admin.");
+    function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) internal returns (bytes32) {
         require(eta >= getBlockTimestamp().add(delay), "Timelock::queueTransaction: Estimated execution block must satisfy delay.");
 
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
@@ -357,8 +356,7 @@ contract Governance {
         return txHash;
     }
 
-    function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public {
-        require(msg.sender == address(this), "Timelock::cancelTransaction: Call must come from admin.");
+    function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
 
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
         queuedTransactions[txHash] = false;
