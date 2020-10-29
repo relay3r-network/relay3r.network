@@ -363,7 +363,7 @@ contract Governance {
 
         emit CancelTransaction(txHash, target, value, signature, data, eta);
     }
-
+    //TODO make this function internal
     function executeTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public payable returns (bytes memory) {
         require(msg.sender == address(this), "Timelock::executeTransaction: Call must come from admin.");
 
