@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.6;
+pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
@@ -11,15 +11,16 @@ contract Governance {
     string public constant name = "Governance";
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    uint public _quorumVotes = 400; // % of total supply required
+    uint public _quorumVotes = 5000; // % of total supply required
 
     /// @notice The number of votes required in order for a voter to become a proposer
-    uint public _proposalThreshold = 100;
+    uint public _proposalThreshold = 5000;
 
     uint public constant BASE = 10000;
 
     function setQuorum(uint quorum_) external {
         require(msg.sender == address(this), "Governance::setQuorum: timelock only");
+        require(quorum_ <= BASE, "Governance::setQuorum: quorum_ > BASE");
         _quorumVotes = quorum_;
     }
 
@@ -33,6 +34,7 @@ contract Governance {
 
     function setThreshold(uint threshold_) external {
         require(msg.sender == address(this), "Governance::setQuorum: timelock only");
+        require(threshold_ <= BASE, "Governance::setThreshold: threshold_ > BASE");
         _proposalThreshold = threshold_;
     }
 
@@ -52,58 +54,26 @@ contract Governance {
     uint public proposalCount;
 
     struct Proposal {
-        /// @notice Unique id for looking up a proposal
         uint id;
-
-        /// @notice Creator of the proposal
         address proposer;
-
-        /// @notice The timestamp that the proposal will be available for execution, set once the vote succeeds
         uint eta;
-
-        /// @notice the ordered list of target addresses for calls to be made
         address[] targets;
-
-        /// @notice The ordered list of values (i.e. msg.value) to be passed to the calls to be made
         uint[] values;
-
-        /// @notice The ordered list of function signatures to be called
         string[] signatures;
-
-        /// @notice The ordered list of calldata to be passed to each call
         bytes[] calldatas;
-
-        /// @notice The block at which voting begins: holders must delegate their votes prior to this block
         uint startBlock;
-
-        /// @notice The block at which voting ends: votes must be cast prior to this block
         uint endBlock;
-
-        /// @notice Current number of votes in favor of this proposal
         uint forVotes;
-
-        /// @notice Current number of votes in opposition to this proposal
         uint againstVotes;
-
-        /// @notice Flag marking whether the proposal has been canceled
         bool canceled;
-
-        /// @notice Flag marking whether the proposal has been executed
         bool executed;
-
-        /// @notice Receipts of ballots for the entire set of voters
         mapping (address => Receipt) receipts;
     }
 
     /// @notice Ballot receipt record for a voter
     struct Receipt {
-        /// @notice Whether or not a vote has been cast
         bool hasVoted;
-
-        /// @notice Whether or not the voter supports the proposal
         bool support;
-
-        /// @notice The number of votes the voter had, which were cast
         uint votes;
     }
 
@@ -127,6 +97,9 @@ contract Governance {
 
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
+
+
+    bytes32 public immutable DOMAINSEPARATOR;
 
     /// @notice The EIP-712 typehash for the ballot struct used by the contract
     bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,bool support)");
@@ -220,7 +193,7 @@ contract Governance {
 
     function _queueOrRevert(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
         require(!queuedTransactions[keccak256(abi.encode(target, value, signature, data, eta))], "Governance::_queueOrRevert: proposal action already queued at eta");
-        queueTransaction(target, value, signature, data, eta);
+        _queueTransaction(target, value, signature, data, eta);
     }
 
     function execute(uint proposalId) public payable {
@@ -228,7 +201,7 @@ contract Governance {
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
-            executeTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+            _executeTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
         }
         emit ProposalExecuted(proposalId);
     }
@@ -242,7 +215,7 @@ contract Governance {
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
-            cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+            _cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
         }
 
         emit ProposalCanceled(proposalId);
@@ -280,16 +253,15 @@ contract Governance {
     }
 
     function castVote(uint proposalId, bool support) public {
-        return _castVote(msg.sender, proposalId, support);
+        _castVote(msg.sender, proposalId, support);
     }
 
     function castVoteBySig(uint proposalId, bool support, uint8 v, bytes32 r, bytes32 s) public {
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAINSEPARATOR, structHash));
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), "Governance::castVoteBySig: invalid signature");
-        return _castVote(signatory, proposalId, support);
+        _castVote(signatory, proposalId, support);
     }
 
     function _castVote(address voter, uint proposalId, bool support) internal {
@@ -333,6 +305,7 @@ contract Governance {
 
     constructor(address token_) public {
         VOTER = DelegateInterface(token_);
+        DOMAINSEPARATOR = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
     }
 
     receive() external payable { }
@@ -346,9 +319,8 @@ contract Governance {
         emit NewDelay(delay);
     }
 
-    function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) internal returns (bytes32) {
+    function _queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) internal returns (bytes32) {
         require(eta >= getBlockTimestamp().add(delay), "Timelock::queueTransaction: Estimated execution block must satisfy delay.");
-
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
         queuedTransactions[txHash] = true;
 
@@ -356,17 +328,14 @@ contract Governance {
         return txHash;
     }
 
-    function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
-
+    function _cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
         queuedTransactions[txHash] = false;
 
         emit CancelTransaction(txHash, target, value, signature, data, eta);
     }
-    //TODO make this function internal
-    function executeTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public payable returns (bytes memory) {
-        require(msg.sender == address(this), "Timelock::executeTransaction: Call must come from admin.");
 
+    function _executeTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) internal returns (bytes memory) {
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
         require(queuedTransactions[txHash], "Timelock::executeTransaction: Transaction hasn't been queued.");
         require(getBlockTimestamp() >= eta, "Timelock::executeTransaction: Transaction hasn't surpassed time lock.");
@@ -383,7 +352,7 @@ contract Governance {
         }
 
         // solium-disable-next-line security/no-call-value
-        (bool success, bytes memory returnData) = target.call{value: value}(callData);
+        (bool success, bytes memory returnData) = target.call{value:value}(callData);
         require(success, "Timelock::executeTransaction: Transaction execution reverted.");
 
         emit ExecuteTransaction(txHash, target, value, signature, data, eta);
