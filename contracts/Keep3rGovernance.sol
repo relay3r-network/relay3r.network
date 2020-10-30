@@ -119,7 +119,7 @@ contract Governance {
     /// @notice An event emitted when a proposal has been executed in the Timelock
     event ProposalExecuted(uint id);
 
-    function proposeJob(address job) public returns (uint) {
+    function proposeJob(address job) public {
         require(msg.sender == address(VOTER), "Governance::proposeJob: only VOTER can propose new jobs");
         address[] memory targets;
         targets[0] = address(VOTER);
@@ -133,7 +133,7 @@ contract Governance {
         uint[] memory values;
         values[0] = 0;
 
-        _propose(targets, values, signatures, calldatas, "Governance::proposeJob: New job review request");
+        _propose(targets, values, signatures, calldatas, string(abi.encodePacked("Governance::proposeJob(): ", job)));
     }
 
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
@@ -211,7 +211,7 @@ contract Governance {
         require(state != ProposalState.Executed, "Governance::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(VOTER.getPriorVotes(proposal.proposer, block.number.sub(1)) <= proposalThreshold(), "Governance::cancel: proposer above threshold");
+        require(proposal.proposer != address(VOTER) && VOTER.getPriorVotes(proposal.proposer, block.number.sub(1)) < proposalThreshold(), "Governance::cancel: proposer above threshold");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -239,7 +239,9 @@ contract Governance {
             return ProposalState.Pending;
         } else if (block.number <= proposal.endBlock) {
             return ProposalState.Active;
-        } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotes()) {
+        } else if (proposal.forVotes.add(proposal.againstVotes) < quorumVotes()) {
+            return ProposalState.Defeated;
+        } else if (proposal.forVotes <= proposal.againstVotes) {
             return ProposalState.Defeated;
         } else if (proposal.eta == 0) {
             return ProposalState.Succeeded;
