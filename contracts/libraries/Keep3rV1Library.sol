@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.6;
 
-import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/Uniswap/IUniswapV2Pair.sol";
 
 library Keep3rV1Library {
     function getReserve(address pair, address reserve) external view returns (uint) {
