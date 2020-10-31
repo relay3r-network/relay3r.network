@@ -1,25 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.5.17;
+pragma solidity ^0.6.12;
 
-interface IKeep3rV1 {
-    function isKeeper(address) external returns (bool);
-    function worked(address keeper) external;
-}
-
-interface ISushiswapV2Factory {
-    function allPairsLength() external view returns (uint);
-    function allPairs(uint) external view returns (address pair);
-}
-
-interface ISushiswapV2Pair {
-    function token0() external view returns (address);
-    function token1() external view returns (address);
-    function balanceOf(address account) external view returns (uint);
-}
-
-interface ISushiswapV2Maker {
-    function convert(address token0, address token1) external;
-}
+import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import '../interfaces/Sushiswap/ISushiswapV2Factory.sol';
+import '../interfaces/Sushiswap/ISushiswapV2Maker.sol';
+import '../interfaces/Sushiswap/ISushiswapV2Pair.sol';
 
 contract SushiswapV2Keep3r {
 
@@ -29,7 +14,7 @@ contract SushiswapV2Keep3r {
         KP3R.worked(msg.sender);
     }
 
-    IKeep3rV1 public constant KP3R = IKeep3rV1(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    IKeep3rV1Mini public constant KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
     ISushiswapV2Factory public constant SV2F = ISushiswapV2Factory(0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);
     ISushiswapV2Maker public constant SV2M = ISushiswapV2Maker(0x6684977bBED67e101BB80Fc07fCcfba655c0a64F);
 
