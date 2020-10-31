@@ -11,7 +11,7 @@ import '@openzeppelin/contracts/utils/Address.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
 
-import '../interfaces/IKeep3rV1Mini.sol';
+import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 interface CTokenInterface {
     function accrueInterest() external returns (uint);

@@ -2,7 +2,7 @@
 pragma solidity ^0.6.12;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import '../interfaces/IKeep3rV1Mini.sol';
+import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.

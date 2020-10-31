@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
 // import "./interfaces/DelegateInterface.sol";
-import "./interfaces/IKeep3rV1.sol";
+import "./interfaces/Keep3r/IKeep3rV1.sol";
 
 contract Governance {
     using SafeMath for uint;

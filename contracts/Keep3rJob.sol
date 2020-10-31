@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
-import "./interfaces/IKeep3rHelper.sol";
-import "./interfaces/IKeep3r.sol";
+import "./interfaces/Keep3r/IKeep3rHelper.sol";
+import "./interfaces/Keep3r/IKeep3r.sol";
 import "./interfaces/UniOracleFactory.sol";
 
 contract Keep3rJob {
