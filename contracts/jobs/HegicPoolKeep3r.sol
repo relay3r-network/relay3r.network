@@ -4,15 +4,15 @@ pragma solidity >=0.6.8;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
 
-import '../../interfaces/HegicPool/IHegicPoolV2.sol';
-import '../../interfaces/Keep3r/IHegicPoolKeep3r.sol';
-import '../../interfaces/LotManager/ILotManager.sol';
-import '../../interfaces/IHegicStaking.sol';
+import '../interfaces/HegicPool/IHegicPoolV2.sol';
+import '../interfaces/Keep3r/IHegicPoolKeep3r.sol';
+import '../interfaces/LotManager/ILotManager.sol';
+import '../interfaces/HegicPool/IHegicStaking.sol';
 
 import '../Governable.sol';
 import '../CollectableDust.sol';
 
-import './Keep3rAbstract.sol';
+import '../Keep3rAbstract.sol';
 
 contract HegicPoolKeep3r is Governable, CollectableDust, Keep3r, IHegicPoolKeep3r {
   using SafeMath for uint256;

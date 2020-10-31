@@ -633,9 +633,9 @@ contract Keep3rV1 is ReentrancyGuard {
      * @notice Allows governance to change the Keep3rHelper for max spend
      * @param _kprh new helper address to set
      */
-    function setKeep3rHelper(IKeep3rV1Helper _kprh) external {
+    function setKeep3rHelper(address _kprh) external {
         require(msg.sender == governance, "setKeep3rHelper: !gov");
-        KPRH = _kprh;
+        KPRH = IKeep3rV1Helper(_kprh);
     }
 
     /**

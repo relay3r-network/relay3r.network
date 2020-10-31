@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
-interface IKeep3rV1 {
-    function isKeeper(address) external returns (bool);
-    function worked(address) external;
-}
+import '../interfaces/IKeep3rV1Mini.sol';
 
 interface ISynthetixFeePool {
     function closeCurrentFeePeriod() external;
@@ -28,7 +25,7 @@ interface ISynthetixLiquidations {
 
 contract SynthetixKeep3rV1 {
 
-    IKeep3rV1 constant public KP3R = IKeep3rV1(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    IKeep3rV1Mini constant public KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
 
     ISynthetixFeePool constant public SFP = ISynthetixFeePool(0xb440DD674e1243644791a4AdfE3A2AbB0A92d309); // ISynthetixFeePool(0x013D16CB1Bd493bBB89D45b43254842FadC169C8);
     ISynthetixExchangeRates constant public SER = ISynthetixExchangeRates(0xda80E6024bC82C9fe9e4e6760a9769CF0D231E80);

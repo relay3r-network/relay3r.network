@@ -3,7 +3,8 @@ pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import "./interfaces/DelegateInterface.sol";
+// import "./interfaces/DelegateInterface.sol";
+import "./interfaces/IKeep3rV1.sol";
 
 contract Governance {
     using SafeMath for uint;
