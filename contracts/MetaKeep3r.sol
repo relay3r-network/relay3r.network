@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.5.17;
+pragma solidity ^0.6.12;
 
 library SafeMath {
     function add(uint a, uint b) internal pure returns (uint) {
@@ -97,7 +97,7 @@ contract MetaKeep3r {
         KP3R.unbond(address(KP3R), KP3R.bonds(address(this), address(KP3R)));
     }
 
-    function() external payable {}
+    receive() external payable {}
 
     function _swap(uint _amount) internal returns (uint) {
         KP3R.approve(address(UNI), _amount);
