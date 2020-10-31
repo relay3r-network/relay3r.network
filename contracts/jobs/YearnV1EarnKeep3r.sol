@@ -2,17 +2,9 @@
 pragma solidity ^0.6.12;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint);
-}
+import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 interface IYERC20 {
     function rebalance() external;
