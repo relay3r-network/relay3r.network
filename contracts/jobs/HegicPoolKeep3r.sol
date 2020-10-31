@@ -5,7 +5,7 @@ pragma solidity >=0.6.8;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 
 import '../interfaces/HegicPool/IHegicPoolV2.sol';
-import '../interfaces/Keep3r/IHegicPoolKeep3r.sol';
+import '../interfaces/HegicPool/IHegicPoolKeep3r.sol';
 import '../interfaces/LotManager/ILotManager.sol';
 import '../interfaces/HegicPool/IHegicStaking.sol';
 
