@@ -65,22 +65,15 @@ contract SushiswapV2Keep3r {
         require(_worked, "SushiswapV2Keep3r::batch: job(s) failed");
     }
 
-    function workCombined() external upkeep{
+    function work() external upkeep{
         require(workable(),"No pairs to convert");
-        //Set convertablePairs to 0
-        ISushiswapV2Pair[]  storage  convertablePairs;
-        // iterate and add all pairs convertable
+        // iterate and add convert all pairs with balance
         for (uint i = 0; i < SV2F.allPairsLength(); i++) {
             if (haveBalance(SV2F.allPairs(i))) {
-                convertablePairs.push(ISushiswapV2Pair(SV2F.allPairs(i)));
+                //Do work
+                (bool success, bytes memory message) = address(SV2M).delegatecall(abi.encodeWithSignature("convert(address,address)", ISushiswapV2Pair(SV2F.allPairs(i)).token0(), ISushiswapV2Pair(SV2F.allPairs(i)).token1()));
+                require(success,  string(abi.encodePacked("SushiswapV2Keep3r::convert: failed [", message, "]")));
             }
-        }
-        //Iterate again and this time do the conversion
-        for(uint i = 0; i < count();i++){
-            //Do work
-            require(haveBalance(address(convertablePairs[i])), "SushiswapV2Keep3r::work: invalid pair");
-            (bool success, bytes memory message) = address(SV2M).delegatecall(abi.encodeWithSignature("convert(address,address)", convertablePairs[i].token0(), convertablePairs[i].token1()));
-            require(success,  string(abi.encodePacked("SushiswapV2Keep3r::convert: failed [", message, "]")));
         }
     }
 }
