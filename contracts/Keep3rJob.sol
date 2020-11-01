@@ -7,7 +7,7 @@ import "./interfaces/UniOracleFactory.sol";
 
 contract Keep3rJob {
     UniOracleFactory constant JOB = UniOracleFactory(0x61da8b0808CEA5281A912Cd85421A6D12261D136);
-    IKeep3r constant KPR = IKeep3r(0x9696Fea1121C938C861b94FcBEe98D971de54B32);
+    IKeep3r constant KPR = IKeep3r(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
     IKeep3rHelper constant KPRH = IKeep3rHelper(0x0);
     // TODO: Add whitelist for approved contracts (worth paying for)
     // TODO: Get context values to know how much is a better value to pay out
