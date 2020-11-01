@@ -16,3 +16,5 @@ reports/
 .env.production.local
 
 node_modules/
+#Mnemonic for deploy
+secrets.json

@@ -13,10 +13,15 @@ contract GetKeep3rLPTokens{
     uint constant public INF = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     address self = address(this);
 
-    address public  UniswapRouter = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address public  UniswapRouter;
+    IERC20 public KeeperInterface;
+
+    constructor(address UniRouter,address KeeperToken) public{
+        UniswapRouter = UniRouter;
+        KeeperInterface = IERC20(KeeperToken);
+    }
 
     IUniswapV2Router uniswapInterface = IUniswapV2Router(UniswapRouter);
-    IERC20 public KeeperInterface = IERC20(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
     IERC20 public pairInterface = IERC20(UniswapV2Library.pairFor(uniswapInterface.factory(),address(KeeperInterface),uniswapInterface.WETH()));
     IWETH wethInterface = IWETH(uniswapInterface.WETH());
 
