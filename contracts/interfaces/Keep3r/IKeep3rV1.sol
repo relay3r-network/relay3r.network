@@ -19,4 +19,5 @@ interface IKeep3rV1 {
     function slash(address bonded, address keeper, uint amount) external;
     function revoke(address keeper) external;
     function resolve(address keeper) external;
+    function setLiquidityFee(uint newFee) external;
 }

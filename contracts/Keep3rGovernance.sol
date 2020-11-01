@@ -375,6 +375,11 @@ contract Governance {
         KPR.resolve(keeper);
     }
 
+    function setLiquidityFee(uint newFee) external {
+        require(msg.sender == guardian, "Keep3rGovernance::setLiquidityFee: !guardian");
+        KPR.setLiquidityFee(newFee);
+    }
+
     mapping (bytes32 => bool) public queuedTransactions;
 
     constructor(address token_) public {
