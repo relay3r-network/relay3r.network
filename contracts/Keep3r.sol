@@ -247,8 +247,8 @@ contract Keep3rV1 is ReentrancyGuard {
     /// @notice 3 days till liquidity can be bound
     uint constant public LIQUIDITYBOND = 3 days;
 
-    /// @notice direct liquidity fee 0.3%
-    uint constant public FEE = 30;
+    /// @notice direct liquidity fee 0.3%,Can be modified by governance contract
+    uint public FEE = 30;
     uint constant public BASE = 10000;
 
     /// @notice address used for ETH transfers
@@ -409,6 +409,15 @@ contract Keep3rV1 is ReentrancyGuard {
     function revokeLiquidity(address liquidity) external {
         require(msg.sender == governance, "revokeLiquidity: !gov");
         liquidityAccepted[liquidity] = false;
+    }
+
+    /**
+     * @notice Set new liquidity fee from governance
+     * @param newFee the New fee for further liquidity adds
+     */
+    function setLiquidityFee(uint newFee) external {
+        require(msg.sender == governance, "setLiquidityFee: !gov");
+        FEE = newFee;
     }
 
     /**
