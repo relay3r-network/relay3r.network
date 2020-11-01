@@ -3,7 +3,6 @@ pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
-// import "./interfaces/DelegateInterface.sol";
 import "./interfaces/Keep3r/IKeep3rV1.sol";
 
 contract Governance {
