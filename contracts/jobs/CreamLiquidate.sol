@@ -1,35 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
-
+//Import openzepplin libraries and interfaces
 import '@openzeppelin/contracts/math/SafeMath.sol';
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-
 import '@openzeppelin/contracts/utils/Address.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
-
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
+//Import Cream interfaces
+import '../interfaces/Cream/ICERC20.sol';
+import '../interfaces/Cream/ICEther.sol';
+import '../interfaces/Cream/IComptroller.sol';
 
-
-interface ICERC20 {
-    function liquidateBorrow(address borrower, uint repayAmount, address cTokenCollateral) external returns (uint);
-    function borrowBalanceStored(address account) external view returns (uint);
-    function underlying() external view returns (address);
-    function symbol() external view returns (string memory);
-}
-
-interface ICEther {
-    function liquidateBorrow(address borrower, address cTokenCollateral) external payable;
-    function borrowBalanceStored(address account) external view returns (uint);
-}
-
-interface IComptroller {
-    function getAccountLiquidity(address account) external view returns (uint, uint, uint);
-    function closeFactorMantissa() external view returns (uint);
-}
 
 
 contract CreamLiquidate {
