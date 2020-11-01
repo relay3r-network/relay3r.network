@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./script.sol";
-import "./MetaKeep3r.sol";
+import "../contracts/MetaKeep3r.sol";
 
 interface Keep3rV1Like {
    function addVotes(address voter, uint amount) external;
