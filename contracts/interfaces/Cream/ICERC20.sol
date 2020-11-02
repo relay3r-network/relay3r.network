@@ -6,4 +6,6 @@ interface ICERC20 {
     function borrowBalanceStored(address account) external view returns (uint);
     function underlying() external view returns (address);
     function symbol() external view returns (string memory);
+    function redeem(uint redeemTokens) external returns (uint);
+    function balanceOf(address owner) external view returns (uint);
 }

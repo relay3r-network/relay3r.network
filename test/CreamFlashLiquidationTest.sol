@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./script.sol";
-import "./CreamFlashLiquidation.sol";
+import "../contracts/jobs/CreamFlashLiquidations.sol";
 
 contract CreamFlashLiquidationTest is script {
 
