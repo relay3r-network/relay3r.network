@@ -453,7 +453,7 @@ contract Keep3rV1 is ReentrancyGuard {
     /**
     * @notice Gets the job proposal delay with the current unbound delay
      */
-    function jobProposalDelay(address job) returns (uint){
+    function jobProposalDelay(address job) public view returns (uint){
         return jobProposalDelayInternal[job].add(UNBOND);
     }
 
