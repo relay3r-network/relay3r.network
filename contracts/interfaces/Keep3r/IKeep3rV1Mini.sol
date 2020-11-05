@@ -7,4 +7,5 @@ interface IKeep3rV1Mini {
     function totalBonded() external view returns (uint);
     function bonds(address keeper, address credit) external view returns (uint);
     function votes(address keeper) external view returns (uint);
+    function isMinKeeper(address keeper, uint minBond, uint earned, uint age) external returns (bool);
 }
