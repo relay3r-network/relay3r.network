@@ -64,7 +64,7 @@ Step 1 is to provide LP tokens as credit. You receive all your LP tokens back wh
 function addLiquidityToJob(address liquidity, address job, uint amount) external
 ```
 
-Wait ```LIQUIDITYBOND``` (default 2 days) days.
+Wait `LIQUIDITYBOND` (default 2 days) days.
 
 ```
 /**
@@ -88,7 +88,7 @@ function applyCreditToJob(address provider, address liquidity, address job) exte
 function unbondLiquidityFromJob(address liquidity, address job, uint amount) external
 ```
 
-Wait ```UNBOND``` (default 14 days) days.
+Wait `UNBOND` (default 14 days) days.
 
 ```
 /**
@@ -123,7 +123,7 @@ function addCreditETH(address job) external payable
 
 ## Selecting Keepers
 
-Dependent on your requirements you might allow any keepers, or you want to limit specific keepers, you can filter keepers based on ```age```, ```bond```, ```total earned funds```, or even arbitrary values such as additional bonded tokens.
+Dependent on your requirements you might allow any keepers, or you want to limit specific keepers, you can filter keepers based on `age`, `bond`, `total earned funds`, or even arbitrary values such as additional bonded tokens.
 
 ### No access control
 
@@ -154,7 +154,7 @@ Filter keepers based on bonded amount, earned funds, and age in system.
 function isMinKeeper(address keeper, uint minBond, uint earned, uint age) external returns (bool)
 ```
 
-Additionally you can filter keepers on additional bonds, for example a keeper might need to have ```SNX``` to be able to participate in the [Synthetix](https://synthetix.io/) ecosystem.
+Additionally you can filter keepers on additional bonds, for example a keeper might need to have `SNX` to be able to participate in the [Synthetix](https://synthetix.io/) ecosystem.
 
 ```
 /**
@@ -173,9 +173,9 @@ function isBondedKeeper(address keeper, address bond, uint minBond, uint earned,
 
 There are three primary payment mechanisms and these are based on the credit provided;
 
-* Pay via liquidity provided tokens (based on ```addLiquidityToJob```)
-* Pay in direct ETH (based on ```addCreditETH```)
-* Pay in direct token (based on ```addCredit```)
+- Pay via liquidity provided tokens (based on `addLiquidityToJob`)
+- Pay in direct ETH (based on `addCreditETH`)
+- Pay in direct token (based on `addCredit`)
 
 ## Auto Pay
 
@@ -191,7 +191,7 @@ function worked(address keeper) external
 
 ### Pay with KPR
 
-The maximum amount that can be paid out per call is ```(gasUsed * fastGasPrice) * 1.1```
+The maximum amount that can be paid out per call is `(gasUsed * fastGasPrice) * 1.1`
 
 ```
 /**

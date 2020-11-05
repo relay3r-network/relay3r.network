@@ -9,11 +9,15 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
-    "@truffle/hdwallet-provider": "^1.1.1"
+    "@truffle/hdwallet-provider": "^1.1.1",
+    "prettier": "^2.1.2"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rm -rf build/",
+    "precompile": "yarn clean",
+    "build": "truffle compile",
+    "test": "truffle test"
   },
   "repository": {
     "type": "git",

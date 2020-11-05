@@ -4,7 +4,7 @@ KPR governance by design has a low overhead, it is not meant to be protocol inte
 
 ## Participants
 
-Only bonded Keepers may participate in governance. To participate in governance a keeper must first ```bond``` KPR, once bonded they can ```delegate``` voting rights to either themselves or another party.
+Only bonded Keepers may participate in governance. To participate in governance a keeper must first `bond` KPR, once bonded they can `delegate` voting rights to either themselves or another party.
 
 ## Managing Jobs
 

@@ -18,9 +18,8 @@
  *
  */
 
-
-const { mnemonic ,InfuraProjID} = require('./secrets.json');
-const HDWalletProvider = require('@truffle/hdwallet-provider');
+const { mnemonic, InfuraProjID } = require("./secrets.json");
+const HDWalletProvider = require("@truffle/hdwallet-provider");
 // const infuraKey = "fj4jll3k.....";
 //
 // const fs = require('fs');
@@ -36,27 +35,35 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-    networks: {
-        ropsten: {
-          provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/${InfuraProjID}`),
-          network_id: 3, // Ropsten network
-          gas: 8000029
-        },
-        live: {
-          provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${InfuraProjID}`),
-          // port: 80,
-          network_id: 1,        // Ethereum public network
-          // optional config values:
-          gas: 5341888
-          // gasPrice
-          // from - default address to use for any transaction Truffle makes during migrations
-          // provider - web3 provider instance Truffle should use to talk to the Ethereum network.
-          //          - function that returns a web3 provider instance (see below.)
-          //          - if specified, host and port are ignored.
-          // skipDryRun: - true if you don't want to test run the migration locally before the actual migration (default is false)
-          // timeoutBlocks: - if a transaction is not mined, keep waiting for this number of blocks (default is 50)
-        }
-      },
+  networks: {
+    ropsten: {
+      provider: () =>
+        new HDWalletProvider(
+          mnemonic,
+          `https://ropsten.infura.io/v3/${InfuraProjID}`
+        ),
+      network_id: 3, // Ropsten network
+      gas: 8000029,
+    },
+    live: {
+      provider: () =>
+        new HDWalletProvider(
+          mnemonic,
+          `https://mainnet.infura.io/v3/${InfuraProjID}`
+        ),
+      // port: 80,
+      network_id: 1, // Ethereum public network
+      // optional config values:
+      gas: 5341888,
+      // gasPrice
+      // from - default address to use for any transaction Truffle makes during migrations
+      // provider - web3 provider instance Truffle should use to talk to the Ethereum network.
+      //          - function that returns a web3 provider instance (see below.)
+      //          - if specified, host and port are ignored.
+      // skipDryRun: - true if you don't want to test run the migration locally before the actual migration (default is false)
+      // timeoutBlocks: - if a transaction is not mined, keep waiting for this number of blocks (default is 50)
+    },
+  },
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
@@ -66,14 +73,14 @@ module.exports = {
   // Configure your compilers
   compilers: {
     solc: {
-      version: '^0.6.12',
+      version: "^0.6.12",
       settings: {
         // evmVersion: 'byzantium', // Default: "petersburg"
         optimizer: {
           enabled: true,
-          runs: 200
-        }
-      }
-    }
-  }
+          runs: 200,
+        },
+      },
+    },
+  },
 };

@@ -1,16 +1,16 @@
 # Keepers
 
-Keepers are bots, scripts, other contracts, or simply EOA accounts that trigger events. This can be submitting a signed TX on behalf of a third party, calling a transaction at a specific time, or more complex functionality.  
+Keepers are bots, scripts, other contracts, or simply EOA accounts that trigger events. This can be submitting a signed TX on behalf of a third party, calling a transaction at a specific time, or more complex functionality.
 
-Each time you execute such a function, you are rewarded in either ETH, tokens, or the systems native token KPR. The maximum amount of KPR receivable is gasUsed + premium (configured by governance).  
+Each time you execute such a function, you are rewarded in either ETH, tokens, or the systems native token KPR. The maximum amount of KPR receivable is gasUsed + premium (configured by governance).
 
-Jobs might require keepers that have a minimum amount of bonded tokens, have earned a minimum amount of fees, or have been in the system longer than a certain period of time.  
+Jobs might require keepers that have a minimum amount of bonded tokens, have earned a minimum amount of fees, or have been in the system longer than a certain period of time.
 
-At the most simple level, they simply require a keeper to be registered in the system.  
+At the most simple level, they simply require a keeper to be registered in the system.
 
 ## Becoming a Keeper
 
-To become a keeper, you simply need to call ```bond(address,uint)```, no funds are required to become a keeper, however certain jobs might require a minimum amount of funds.
+To become a keeper, you simply need to call `bond(address,uint)`, no funds are required to become a keeper, however certain jobs might require a minimum amount of funds.
 
 ```
 /**
@@ -21,7 +21,7 @@ To become a keeper, you simply need to call ```bond(address,uint)```, no funds a
 function bond(address bonding, uint amount) external
 ```
 
-After waiting ```BOND``` days (default 3 days) and you can activate as a keeper;
+After waiting `BOND` days (default 3 days) and you can activate as a keeper;
 
 ```
 /**
@@ -44,7 +44,7 @@ If you no longer wish to participate you can unbond to deactivate.
 function unbond(address bonding, uint amount) external
 ```
 
-After waiting ```UNBOND``` days (default 14 days) you can withdraw any bonded assets
+After waiting `UNBOND` days (default 14 days) you can withdraw any bonded assets
 
 ```
 /**
