@@ -308,8 +308,12 @@ contract Governance {
     address public guardian;
     address public pendingGuardian;
 
-    function setGuardian(address _guardian) external {
-        require(msg.sender == guardian, "Keep3rGovernance::setGuardian: !guardian");
+    modifier onlyGuardian(){
+        require(msg.sender == guardian , "Error: caller is not the governance address");
+        _;
+    }
+
+    function setGuardian(address _guardian) external onlyGuardian {
         pendingGuardian = _guardian;
     }
 
@@ -318,65 +322,51 @@ contract Governance {
         guardian = pendingGuardian;
     }
 
-    function addVotes(address voter, uint amount) external {
-        require(msg.sender == guardian, "Keep3rGovernance::addVotes: !guardian");
+    function addVotes(address voter, uint amount) external onlyGuardian {
         KPR.addVotes(voter, amount);
     }
-    function removeVotes(address voter, uint amount) external {
-        require(msg.sender == guardian, "Keep3rGovernance::removeVotes: !guardian");
+    function removeVotes(address voter, uint amount) external onlyGuardian {
         KPR.removeVotes(voter, amount);
     }
-    function addKPRCredit(address job, uint amount) external {
-        require(msg.sender == guardian, "Keep3rGovernance::addKPRCredit: !guardian");
+    function addKPRCredit(address job, uint amount) external onlyGuardian {
         KPR.addKPRCredit(job, amount);
     }
-    function approveLiquidity(address liquidity) external {
-        require(msg.sender == guardian, "Keep3rGovernance::approveLiquidity: !guardian");
+    function approveLiquidity(address liquidity) external onlyGuardian {
         KPR.approveLiquidity(liquidity);
     }
-    function revokeLiquidity(address liquidity) external {
-        require(msg.sender == guardian, "Keep3rGovernance::revokeLiquidity: !guardian");
+    function revokeLiquidity(address liquidity) external onlyGuardian {
         KPR.revokeLiquidity(liquidity);
     }
-    function addJob(address job) external {
-        require(msg.sender == guardian, "Keep3rGovernance::addJob: !guardian");
+    function addJob(address job) external onlyGuardian {
         KPR.addJob(job);
     }
-    function removeJob(address job) external {
-        require(msg.sender == guardian, "Keep3rGovernance::removeJob: !guardian");
+    function removeJob(address job) external onlyGuardian {
         KPR.removeJob(job);
     }
-    function setKeep3rHelper(address kprh) external {
-        require(msg.sender == guardian, "Keep3rGovernance::setKeep3rHelper: !guardian");
+    function setKeep3rHelper(address kprh) external onlyGuardian {
         KPR.setKeep3rHelper(kprh);
     }
-    function setGovernance(address _governance) external {
+    function setGovernance(address _governance) external onlyGuardian {
         require(msg.sender == guardian, "Keep3rGovernance::setGovernance: !guardian");
         KPR.setGovernance(_governance);
     }
-    function acceptGovernance() external {
-        require(msg.sender == guardian, "Keep3rGovernance::acceptGovernance: !guardian");
+    function acceptGovernance() external onlyGuardian {
         KPR.acceptGovernance();
     }
-    function dispute(address keeper) external {
-        require(msg.sender == guardian, "Keep3rGovernance::dispute: !guardian");
+    function dispute(address keeper) external onlyGuardian {
         KPR.dispute(keeper);
     }
-    function slash(address bonded, address keeper, uint amount) external {
-        require(msg.sender == guardian, "Keep3rGovernance::slash: !guardian");
+    function slash(address bonded, address keeper, uint amount) external onlyGuardian {
         KPR.slash(bonded, keeper, amount);
     }
-    function revoke(address keeper) external {
-        require(msg.sender == guardian, "Keep3rGovernance::revoke: !guardian");
+    function revoke(address keeper) external onlyGuardian {
         KPR.revoke(keeper);
     }
-    function resolve(address keeper) external {
-        require(msg.sender == guardian, "Keep3rGovernance::resolve: !guardian");
+    function resolve(address keeper) external onlyGuardian {
         KPR.resolve(keeper);
     }
 
-    function setLiquidityFee(uint newFee) external {
-        require(msg.sender == guardian, "Keep3rGovernance::setLiquidityFee: !guardian");
+    function setLiquidityFee(uint newFee) external onlyGuardian {
         KPR.setLiquidityFee(newFee);
     }
 
