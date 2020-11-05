@@ -240,12 +240,12 @@ contract Keep3rV1 is ReentrancyGuard {
 
     event AddCredit(address indexed credit, address indexed job, address indexed creditor, uint block, uint amount);
 
-    /// @notice 1 day to bond to become a keeper
-    uint constant public BOND = 3 days;
+    /// @notice 3 days to bond to become a keeper
+    uint public BOND = 3 days;
     /// @notice 14 days to unbond to remove funds from being a keeper
-    uint constant public UNBOND = 14 days;
+    uint public UNBOND = 14 days;
     /// @notice 3 days till liquidity can be bound
-    uint constant public LIQUIDITYBOND = 3 days;
+    uint public LIQUIDITYBOND = 3 days;
 
     /// @notice direct liquidity fee 0.3%,Can be modified by governance contract
     uint public FEE = 30;
@@ -289,8 +289,8 @@ contract Keep3rV1 is ReentrancyGuard {
     mapping(address => mapping(address => mapping(address => uint))) public liquidityUnbonding;
     /// @notice liquidity unbonding amounts
     mapping(address => mapping(address => mapping(address => uint))) public liquidityAmountsUnbonding;
-    /// @notice job proposal delay
-    mapping(address => uint) public jobProposalDelay;
+    /// @dev job proposal delay
+    mapping(address => uint) internal jobProposalDelayInternal;
     /// @notice liquidity apply date
     mapping(address => mapping(address => mapping(address => uint))) public liquidityApplied;
     /// @notice liquidity amount to apply
@@ -413,10 +413,34 @@ contract Keep3rV1 is ReentrancyGuard {
 
     /**
      * @notice Set new liquidity fee from governance
-     * @param newFee the New fee for further liquidity adds
+     * @param newFee the new fee for further liquidity adds
      */
     function setLiquidityFee(uint newFee) external onlyGovernance{
         FEE = newFee;
+    }
+
+    /**
+     * @notice Set bonding delay from governance
+     * @param newBond the new bonding delay
+     */
+    function setBondingDelay(uint newBond) external onlyGovernance{
+        BOND = newBond;
+    }
+
+    /**
+     * @notice Set bonding delay from governance
+     * @param newUnbond the new unbonding delay
+     */
+    function setUnbondingDelay(uint newUnbond) external onlyGovernance{
+        UNBOND = newUnbond;
+    }
+
+    /**
+     * @notice Set liquidity bonding delay from governance
+     * @param newLiqBond the new liquidity bonding delay
+     */
+    function setLiquidityBondingDelay(uint newLiqBond) external onlyGovernance{
+        LIQUIDITYBOND = newLiqBond;
     }
 
     /**
@@ -424,6 +448,13 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function pairs() external view returns (address[] memory) {
         return liquidityPairs;
+    }
+
+    /**
+    * @notice Gets the job proposal delay with the current unbound delay
+     */
+    function jobProposalDelay(address job) returns (uint){
+        return jobProposalDelayInternal[job].add(UNBOND);
     }
 
     /**
@@ -436,13 +467,12 @@ contract Keep3rV1 is ReentrancyGuard {
         require(liquidityAccepted[liquidity], "addLiquidityToJob: !pair");
         IERC20(liquidity).safeTransferFrom(msg.sender, address(this), amount);
         liquidityProvided[msg.sender][liquidity][job] = liquidityProvided[msg.sender][liquidity][job].add(amount);
-
-        liquidityApplied[msg.sender][liquidity][job] = now.add(LIQUIDITYBOND);
+        liquidityApplied[msg.sender][liquidity][job] = now;
         liquidityAmount[msg.sender][liquidity][job] = liquidityAmount[msg.sender][liquidity][job].add(amount);
 
-        if (!jobs[job] && jobProposalDelay[job] < now) {
+        if (!jobs[job] && jobProposalDelay(job) < now) {
             IGovernance(governance).proposeJob(job);
-            jobProposalDelay[job] = now.add(UNBOND);
+            jobProposalDelayInternal[job] = now;
         }
         emit SubmitJob(job, liquidity, msg.sender, block.number, amount);
     }
@@ -456,7 +486,7 @@ contract Keep3rV1 is ReentrancyGuard {
     function applyCreditToJob(address provider, address liquidity, address job) external {
         require(liquidityAccepted[liquidity], "addLiquidityToJob: !pair");
         require(liquidityApplied[provider][liquidity][job] != 0, "credit: no bond");
-        require(liquidityApplied[provider][liquidity][job] < now, "credit: bonding");
+        require(liquidityApplied[provider][liquidity][job].add(LIQUIDITYBOND) >= now, "credit: bonding");
         uint _liquidity = Keep3rV1Library.getReserve(liquidity, address(this));
         uint _credit = _liquidity.mul(liquidityAmount[provider][liquidity][job]).div(IERC20(liquidity).totalSupply());
         _mint(address(this), _credit);
@@ -474,7 +504,7 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function unbondLiquidityFromJob(address liquidity, address job, uint amount) external {
         require(liquidityAmount[msg.sender][liquidity][job] == 0, "credit: pending credit");
-        liquidityUnbonding[msg.sender][liquidity][job] = now.add(UNBOND);
+        liquidityUnbonding[msg.sender][liquidity][job] = now;
         liquidityAmountsUnbonding[msg.sender][liquidity][job] = liquidityAmountsUnbonding[msg.sender][liquidity][job].add(amount);
         require(liquidityAmountsUnbonding[msg.sender][liquidity][job] <= liquidityProvided[msg.sender][liquidity][job], "unbondLiquidityFromJob: insufficient funds");
 
@@ -498,7 +528,7 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function removeLiquidityFromJob(address liquidity, address job) external {
         require(liquidityUnbonding[msg.sender][liquidity][job] != 0, "removeJob: unbond");
-        require(liquidityUnbonding[msg.sender][liquidity][job] < now, "removeJob: unbonding");
+        require(liquidityUnbonding[msg.sender][liquidity][job].add(UNBOND) >= now, "removeJob: unbonding");
         uint _amount = liquidityAmountsUnbonding[msg.sender][liquidity][job];
         liquidityProvided[msg.sender][liquidity][job] = liquidityProvided[msg.sender][liquidity][job].sub(_amount);
         liquidityAmountsUnbonding[msg.sender][liquidity][job] = 0;
@@ -707,7 +737,8 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function bond(address bonding, uint amount) external nonReentrant {
         require(!blacklist[msg.sender], "bond: blacklisted");
-        bondings[msg.sender][bonding] = now.add(BOND);
+        //In this part we changed the addition of current time + bond time to the time bond was called
+        bondings[msg.sender][bonding] = now;
         if (bonding == address(this)) {
             _transferTokens(msg.sender, address(this), amount);
         } else {
@@ -732,7 +763,8 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function activate(address bonding) external {
         require(!blacklist[msg.sender], "activate: blacklisted");
-        require(bondings[msg.sender][bonding] != 0 && bondings[msg.sender][bonding] < now, "activate: bonding");
+        //In this part we changed the check of bonding time being lesser than now to check if current time is > bonding time
+        require(bondings[msg.sender][bonding] != 0 && bondings[msg.sender][bonding].add(BOND) >= now, "activate: bonding");
         if (firstSeen[msg.sender] == 0) {
           firstSeen[msg.sender] = now;
           keeperList.push(msg.sender);
@@ -750,7 +782,7 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param amount allows for partial unbonding
      */
     function unbond(address bonding, uint amount) external {
-        unbondings[msg.sender][bonding] = now.add(UNBOND);
+        unbondings[msg.sender][bonding] = now;
         _unbond(bonding, msg.sender, amount);
         partialUnbonding[msg.sender][bonding] = partialUnbonding[msg.sender][bonding].add(amount);
         emit KeeperUnbonding(msg.sender, block.number, unbondings[msg.sender][bonding], amount);
@@ -761,7 +793,8 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param bonding the asset to withdraw from the bonding pool
      */
     function withdraw(address bonding) external nonReentrant {
-        require(unbondings[msg.sender][bonding] != 0 && unbondings[msg.sender][bonding] < now, "withdraw: unbonding");
+        //Same changes as on bonding check is done here
+        require(unbondings[msg.sender][bonding] != 0 && unbondings[msg.sender][bonding].add(UNBOND) >= now, "withdraw: unbonding");
         require(!disputes[msg.sender], "withdraw: disputes");
 
         if (bonding == address(this)) {
