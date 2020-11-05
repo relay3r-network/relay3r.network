@@ -20,4 +20,7 @@ interface IKeep3rV1 {
     function revoke(address keeper) external;
     function resolve(address keeper) external;
     function setLiquidityFee(uint newFee) external;
+    function setBondingDelay (uint256 newBond) external;
+    function setUnbondingDelay (uint256 newUnbond) external;
+    function setLiquidityBondingDelay (uint256 newLiqBond) external;
 }
