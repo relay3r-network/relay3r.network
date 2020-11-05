@@ -301,6 +301,7 @@ contract Keep3rV1 is ReentrancyGuard {
     /// @notice blacklist of keepers not allowed to participate
     mapping(address => bool) public blacklist;
 
+    mapping(address => uint) public keeperIndexMap;
     /// @notice traversable array of keepers to make external management easier
     address[] public keeperList;
     /// @notice traversable array of jobs to make external management easier
@@ -758,6 +759,19 @@ contract Keep3rV1 is ReentrancyGuard {
     }
 
     /**
+     * @notice Does initial data initialization of keeper entry
+     * @param sender the address to init data for
+     */
+    function doDataInit(address sender) internal {
+        if (firstSeen[sender] == 0) {
+          firstSeen[sender] = now;
+          keeperList.push(sender);
+          keeperIndexMap[sender] = keeperList.length.sub(1);
+          lastJob[sender] = now;
+        }
+    }
+
+    /**
      * @notice allows a keeper to activate/register themselves after bonding
      * @param bonding the asset being activated as bond collateral
      */
@@ -765,15 +779,36 @@ contract Keep3rV1 is ReentrancyGuard {
         require(!blacklist[msg.sender], "activate: blacklisted");
         //In this part we changed the check of bonding time being lesser than now to check if current time is > bonding time
         require(bondings[msg.sender][bonding] != 0 && bondings[msg.sender][bonding].add(BOND) >= now, "activate: bonding");
-        if (firstSeen[msg.sender] == 0) {
-          firstSeen[msg.sender] = now;
-          keeperList.push(msg.sender);
-          lastJob[msg.sender] = now;
-        }
+        //Setup initial data
+        doDataInit(msg.sender);
         keepers[msg.sender] = true;
         _bond(bonding, msg.sender, pendingbonds[msg.sender][bonding]);
         pendingbonds[msg.sender][bonding] = 0;
         emit KeeperBonded(msg.sender, block.number, block.timestamp, bonds[msg.sender][bonding]);
+    }
+
+    /**
+     * @notice allows a keeper to transfer their keeper rights and bonds to another address
+     * @param bonding the asset being transfered to new address as bond collateral
+     * @param to the address keeper rights and bonding amount is transfered to
+     */
+    function transferKeeperRight(address bonding,address to) external {
+        require(!blacklist[msg.sender], "activate: blacklisted");
+        require(keepers[msg.sender], "transferKeeperRight: not keeper");
+        require(msg.sender != to, "Cant transfer rights to self");
+
+        doDataInit(to);
+
+        //Set the user calling keeper stat to false
+        keepers[msg.sender] = false;
+        //Set the to addr keeper stat to true
+        keepers[to] = true;
+
+        //Unbond from sender
+        uint currentbond = bonds[msg.sender][bonding];
+        _unbond(bonding,msg.sender,currentbond);
+        //Bond to receiver
+        _bond(bonding,to,currentbond);
     }
 
     /**
