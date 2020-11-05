@@ -585,7 +585,7 @@ contract Keep3rV1 is ReentrancyGuard {
     function workReceipt(address keeper, uint amount) public {
         require(jobs[msg.sender], "workReceipt: !job");
         require(amount <= KPRH.getQuoteLimit(_gasUsed.sub(gasleft())), "workReceipt: max limit");
-        credits[msg.sender][address(this)] = credits[msg.sender][address(this)].sub(amount, "workReceipt: insuffient funds");
+        credits[msg.sender][address(this)] = credits[msg.sender][address(this)].sub(amount, "workReceipt: insuffcient funds");
         lastJob[keeper] = now;
         _bond(address(this), keeper, amount);
         workCompleted[keeper] = workCompleted[keeper].add(amount);
@@ -600,7 +600,7 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function receipt(address credit, address keeper, uint amount) external {
         require(jobs[msg.sender], "receipt: !job");
-        credits[msg.sender][credit] = credits[msg.sender][credit].sub(amount, "workReceipt: insuffient funds");
+        credits[msg.sender][credit] = credits[msg.sender][credit].sub(amount, "workReceipt: insuffcient funds");
         lastJob[keeper] = now;
         IERC20(credit).safeTransfer(keeper, amount);
         emit KeeperWorked(credit, msg.sender, keeper, block.number);
@@ -613,7 +613,7 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function receiptETH(address keeper, uint amount) external {
         require(jobs[msg.sender], "receipt: !job");
-        credits[msg.sender][ETH] = credits[msg.sender][ETH].sub(amount, "workReceipt: insuffient funds");
+        credits[msg.sender][ETH] = credits[msg.sender][ETH].sub(amount, "workReceipt: insuffcient funds");
         lastJob[keeper] = now;
         payable(keeper).transfer(amount);
         emit KeeperWorked(ETH, msg.sender, keeper, block.number);
