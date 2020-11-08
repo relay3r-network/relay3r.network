@@ -1,4 +1,5 @@
 pragma solidity ^0.6.12;
+import '@openzeppelin/contracts/access/Ownable.sol';
 import "../libraries/UniswapV2Library.sol";
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
@@ -86,17 +87,21 @@ interface UnitradeInterface {
     function updateStaker(address newStaker) external;
 }
 
-contract UnitradeRelay3r {
+contract UnitradeRelay3r is Ownable{
     UnitradeInterface iUniTrade = UnitradeInterface(
         0xC1bF1B4929DA9303773eCEa5E251fDEc22cC6828
     );
     //change this to relay3r on deploy
     IKeep3rV1Mini constant public KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
-
+    bool TryDeflationaryOrders = false;
     modifier upkeep() {
         require(KP3R.isKeeper(msg.sender), "::isKeeper: keeper is not registered");
         _;
         KP3R.worked(msg.sender);
+    }
+
+    function setTryBurnabletokens(bool fTry) public onlyOwner{
+        TryDeflationaryOrders = fTry;
     }
 
     function getIfExecuteable(uint256 i) public view returns (bool) {
@@ -116,6 +121,7 @@ contract UnitradeRelay3r {
         path[0] = tokenIn;
         path[1] = tokenOut;
         if(executorFee <= 0) return false;//Dont execute unprofitable orders
+        if(deflationary && !TryDeflationaryOrders) return false;//Skip deflationary token orders as it is not supported atm
         uint256[] memory amounts = UniswapV2Library.getAmountsOut(
             iUniTrade.uniswapV2Factory(),
             amountInOffered,
@@ -136,6 +142,11 @@ contract UnitradeRelay3r {
                 count++;
             }
         }
+    }
+
+    receive() external payable {
+        //Add any eth received
+        KP3R.addCreditETH{value:msg.value}(address(this));
     }
 
     function workable() public view returns (bool) {
