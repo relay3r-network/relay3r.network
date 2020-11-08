@@ -240,6 +240,12 @@ contract Keep3rV1 is ReentrancyGuard {
 
     event AddCredit(address indexed credit, address indexed job, address indexed creditor, uint block, uint amount);
 
+    /// @notice Keeper rights approved to be spent by spender
+    event KeeperRightApproval(address indexed owner, address indexed spender, bool allowed);
+
+    /// @notice Keeper right transfered to a new address
+    event KeeperRightTransfered(address indexed from, address indexed to, address indexed bond);
+
     /// @notice 3 days to bond to become a keeper
     uint public BOND = 3 days;
     /// @notice 14 days to unbond to remove funds from being a keeper
@@ -302,6 +308,8 @@ contract Keep3rV1 is ReentrancyGuard {
     mapping(address => bool) public blacklist;
 
     mapping(address => uint) public keeperIndexMap;
+    mapping(address => mapping (address => bool)) internal KeeperAllowances;
+
     /// @notice traversable array of keepers to make external management easier
     address[] public keeperList;
     /// @notice traversable array of jobs to make external management easier
@@ -792,23 +800,37 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param bonding the asset being transfered to new address as bond collateral
      * @param to the address keeper rights and bonding amount is transfered to
      */
-    function transferKeeperRight(address bonding,address to) external {
-        require(!blacklist[msg.sender], "activate: blacklisted");
-        require(keepers[msg.sender], "transferKeeperRight: not keeper");
-        require(msg.sender != to, "Cant transfer rights to self");
+    function transferKeeperRightTo(address bonding,address to) external {
+        transferKeeperRight(bonding,msg.sender,to);
+    }
 
+    /**
+     * @notice allows a keeper to transfer their keeper rights and bonds to another address
+     * @param bonding the asset being transfered to new address as bond collateral
+     * @param from the address keeper rights and bonding amount is transfered from
+     * @param to the address keeper rights and bonding amount is transfered to
+     */
+    function transferKeeperRight(address bonding,address from,address to) public {
+        require(!blacklist[from], "activate: blacklisted");
+        require(keepers[from], "transferKeeperRight: not keeper");
+        require(from != to, "Cant transfer rights to self");
+        require(msg.sender == from || keeperallowance(from,msg.sender),"Unauthorized transfer call");
         doDataInit(to);
 
         //Set the user calling keeper stat to false
-        keepers[msg.sender] = false;
+        keepers[from] = false;
         //Set the to addr keeper stat to true
         keepers[to] = true;
 
         //Unbond from sender
-        uint currentbond = bonds[msg.sender][bonding];
-        _unbond(bonding,msg.sender,currentbond);
+        uint currentbond = bonds[from][bonding];
+        _unbond(bonding,from,currentbond);
         //Bond to receiver
         _bond(bonding,to,currentbond);
+
+        //remove rights for this address after transfer is done from caller
+        KeeperAllowances[from][msg.sender] = false;
+        emit KeeperRightTransfered(from,to,bonding);
     }
 
     /**
@@ -887,6 +909,15 @@ contract Keep3rV1 is ReentrancyGuard {
     }
 
     /**
+     * @notice Get if the account can transfer keeper rights on behalf of it
+     * @param account The address of the account holding keeper rights and bons
+     * @param spender The address of the account which can spend keeper rights and bonds
+     */
+    function keeperallowance(address account, address spender) public view returns (bool) {
+        return KeeperAllowances[account][spender];
+    }
+
+    /**
      * @notice Get the number of tokens `spender` is approved to spend on behalf of `account`
      * @param account The address of the account holding the funds
      * @param spender The address of the account spending the funds
@@ -909,6 +940,19 @@ contract Keep3rV1 is ReentrancyGuard {
 
         emit Approval(msg.sender, spender, amount);
         return true;
+    }
+
+    /**
+     * @notice Approve `spender` to transfer Keeper rights
+     * @param spender The address of the account which may transfer keeper rights
+     * @param fAllow whether this spender should be able to transfer rights
+     * @return Whether or not the approval succeeded
+     */
+    function keeperrightapprove(address spender,bool fAllow) public returns (bool) {
+        KeeperAllowances[msg.sender][spender] = fAllow;
+
+        emit KeeperRightApproval(msg.sender, spender, fAllow);
+        return fAllow;
     }
 
     /**
