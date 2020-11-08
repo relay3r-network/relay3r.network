@@ -161,17 +161,4 @@ contract UnitradeRelay3r is Ownable{
             }
         }
     }
-
-    // function getExecutablePairs() public view returns (uint256[] memory pairs) {
-    //     uint256[] storage executeablepairs;
-    //     executeablepairs.push();
-    //     for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength(); i++) {
-    //         if (getIfExecuteable(i)) {
-    //             executeablepairs.push(i);
-    //         }
-    //     }
-    //     for (uint256 j = 0; j < executeablepairs.length; j++) {
-    //         pairs[j] = executeablepairs[j];
-    //     }
-    // }
 }
