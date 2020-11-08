@@ -51,7 +51,7 @@ contract GetKeep3rLPTokens{
     }
 
     receive() external payable {
-        if(msg.sender != UniswapRouter)
+        if(msg.sender != UniswapRouter || msg.sender != address(wethInterface))
             deposit();
     }
 
