@@ -811,10 +811,11 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param to the address keeper rights and bonding amount is transfered to
      */
     function transferKeeperRight(address bonding,address from,address to) public {
-        require(!blacklist[from], "activate: blacklisted");
+        require(!blacklist[from], "transferKeeperRight: blacklisted");
         require(keepers[from], "transferKeeperRight: not keeper");
-        require(from != to, "Cant transfer rights to self");
-        require(msg.sender == from || keeperallowance(from,msg.sender),"Unauthorized transfer call");
+        require(from != to, "transferKeeperRight: Cant transfer rights to self");
+        require(msg.sender == from || keeperallowance(from,msg.sender),"transferKeeperRight: Unauthorized transfer call");
+        require(bondings[from][bonding] != 0 && bondings[from][bonding].add(BOND) >= now, "transferKeeperRight: bonding");
         doDataInit(to);
 
         //Set the user calling keeper stat to false
