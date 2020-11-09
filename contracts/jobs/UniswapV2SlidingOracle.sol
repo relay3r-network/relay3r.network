@@ -9,7 +9,7 @@ import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
 // sliding oracle that uses observations collected to provide moving price averages in the past
-contract UniswapV2Oracle {
+contract UniswapV2SlidingOracle {
     using FixedPoint for *;
     using SafeMath for uint;
 
@@ -51,7 +51,7 @@ contract UniswapV2Oracle {
         governance = pendingGovernance;
     }
 
-    IKeep3rV1Mini public constant KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    IKeep3rV1Mini public  KP3R;
 
     address public constant factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
     // this is redundant with granularity and windowSize, but stored for gas savings & informational purposes.
@@ -69,7 +69,8 @@ contract UniswapV2Oracle {
     mapping(address => uint) public lastUpdated;
     mapping(address => Observation) public lastObservation;
 
-    constructor() public {
+    constructor(address keeperAddr) public {
+        KP3R = IKeep3rV1Mini(keeperAddr);
         governance = msg.sender;
     }
 

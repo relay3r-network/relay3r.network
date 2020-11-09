@@ -43,7 +43,6 @@ module.exports = {
           `https://ropsten.infura.io/v3/${InfuraProjID}`
         ),
       network_id: 3, // Ropsten network
-      gas: 8000029,
     },
     live: {
       provider: () =>
@@ -54,7 +53,6 @@ module.exports = {
       // port: 80,
       network_id: 1, // Ethereum public network
       // optional config values:
-      gas: 5341888,
       // gasPrice
       // from - default address to use for any transaction Truffle makes during migrations
       // provider - web3 provider instance Truffle should use to talk to the Ethereum network.
@@ -75,10 +73,10 @@ module.exports = {
     solc: {
       version: "^0.6.12",
       settings: {
-        // evmVersion: 'byzantium', // Default: "petersburg"
+        evmVersion: 'istanbul', // Default: "petersburg"
         optimizer: {
           enabled: true,
-          runs: 200,
+          runs: 2000000,
         },
       },
     },

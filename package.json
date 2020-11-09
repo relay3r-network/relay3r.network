@@ -9,15 +9,19 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
-    "@truffle/hdwallet-provider": "^1.1.1",
-    "prettier": "^2.1.2"
+    "@truffle/hdwallet-provider": "^1.2.0",
+    "truffle": "^5.1.52"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "prettier": "^2.1.2",
+    "prettier-plugin-solidity": "^1.0.0-alpha.59"
+  },
   "scripts": {
     "clean": "rm -rf build/",
     "precompile": "yarn clean",
     "build": "truffle compile",
-    "test": "truffle test"
+    "test": "truffle test",
+    "prettier": "prettier --write **/*.sol"
   },
   "repository": {
     "type": "git",

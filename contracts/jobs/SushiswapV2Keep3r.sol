@@ -14,9 +14,13 @@ contract SushiswapV2Keep3r {
         KP3R.worked(msg.sender);
     }
 
-    IKeep3rV1Mini public constant KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    IKeep3rV1Mini public KP3R;
     ISushiswapV2Factory public constant SV2F = ISushiswapV2Factory(0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);
     ISushiswapV2Maker public constant SV2M = ISushiswapV2Maker(0x6684977bBED67e101BB80Fc07fCcfba655c0a64F);
+
+    constructor(address keepertoken) public {
+        KP3R = IKeep3rV1Mini(keepertoken);
+    }
 
     function count() public view returns (uint) {
         uint _count = 0;

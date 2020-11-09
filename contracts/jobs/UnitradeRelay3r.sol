@@ -92,12 +92,17 @@ contract UnitradeRelay3r is Ownable{
         0xC1bF1B4929DA9303773eCEa5E251fDEc22cC6828
     );
     //change this to relay3r on deploy
-    IKeep3rV1Mini constant public KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    IKeep3rV1Mini public KP3R;
     bool TryDeflationaryOrders = false;
+
+    constructor(address keepertoken) public {
+        KP3R = IKeep3rV1Mini(keepertoken);
+    }
+
     modifier upkeep() {
         require(KP3R.isKeeper(msg.sender), "::isKeeper: keeper is not registered");
         _;
-        KP3R.worked(msg.sender);
+        KP3R.workedETH(msg.sender);
     }
 
     function setTryBurnabletokens(bool fTry) public onlyOwner{

@@ -5,13 +5,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
-
-interface IYERC20 {
-    function rebalance() external;
-    function balanceOf(address account) external view returns (uint);
-    function token() external view returns (address);
-    function calcPoolValueInToken() external view returns (uint);
-}
+import '../interfaces/Yearn/IYERC20.sol';
 
 contract YearnV1EarnKeep3r {
     using SafeMath for uint;
@@ -21,7 +15,7 @@ contract YearnV1EarnKeep3r {
 
     IYERC20[] internal _tokens;
 
-    constructor() public {
+    constructor(address keepertoken) public {
         _tokens.push(IYERC20(0xd6aD7a6750A7593E092a9B218d66C0A814a3436e));
         _tokens.push(IYERC20(0x83f798e925BcD4017Eb265844FDDAbb448f1707D));
         _tokens.push(IYERC20(0x73a052500105205d34Daf004eAb301916DA8190f));
@@ -29,6 +23,7 @@ contract YearnV1EarnKeep3r {
         _tokens.push(IYERC20(0x26EA744E5B887E5205727f55dFBE8685e3b21951));
         _tokens.push(IYERC20(0xE6354ed5bC4b393a5Aad09f21c46E101e692d447));
         _tokens.push(IYERC20(0x04bC0Ab673d88aE9dbC9DA2380cB6B79C4BCa9aE));
+        KP3R = IKeep3rV1Mini(keepertoken);
     }
 
     function tokens() external view returns (IYERC20[] memory) {
@@ -41,7 +36,7 @@ contract YearnV1EarnKeep3r {
         KP3R.worked(msg.sender);
     }
 
-    IKeep3rV1Mini public constant KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    IKeep3rV1Mini public KP3R;
 
     function workable() public view returns (bool) {
         for (uint i = 0; i < _tokens.length; i++) {

@@ -318,7 +318,6 @@ contract Keep3rV1 is ReentrancyGuard {
     /// @notice governance address for the governance contract
     address public governance;
     address public pendingGovernance;
-
     /// @notice the liquidity token supplied by users paying for jobs
     mapping(address => bool) public liquidityAccepted;
 
@@ -493,7 +492,7 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param job the job that is receiving the credit
      */
     function applyCreditToJob(address provider, address liquidity, address job) external {
-        require(liquidityAccepted[liquidity], "addLiquidityToJob: !pair");
+        require(liquidityAccepted[liquidity], "applyCreditToJob: !pair");
         require(liquidityApplied[provider][liquidity][job] != 0, "credit: no bond");
         require(liquidityApplied[provider][liquidity][job].add(LIQUIDITYBOND) >= now, "credit: bonding");
         uint _liquidity = Keep3rV1Library.getReserve(liquidity, address(this));
@@ -586,6 +585,15 @@ contract Keep3rV1 is ReentrancyGuard {
     }
 
     /**
+     * @notice Implemented by jobs to show that a keeper performed work and get paid in ETH
+     * @param keeper address of the keeper that performed the work
+     */
+    function workedETH(address keeper) external {
+        receiptETH(keeper, KPRH.getQuoteLimit(_gasUsed.sub(gasleft())));
+    }
+
+
+    /**
      * @notice Implemented by jobs to show that a keeper performed work
      * @param keeper address of the keeper that performed the work
      * @param amount the reward that should be allocated
@@ -619,14 +627,13 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param keeper address of the keeper that performed the work
      * @param amount the amount of ETH sent to the keeper
      */
-    function receiptETH(address keeper, uint amount) external {
+    function receiptETH(address keeper, uint amount) public {
         require(jobs[msg.sender], "receipt: !job");
         credits[msg.sender][ETH] = credits[msg.sender][ETH].sub(amount, "workReceipt: insuffcient funds");
         lastJob[keeper] = now;
         payable(keeper).transfer(amount);
         emit KeeperWorked(ETH, msg.sender, keeper, block.number);
     }
-
     function _bond(address bonding, address _from, uint _amount) internal {
         bonds[_from][bonding] = bonds[_from][bonding].add(_amount);
         if (bonding == address(this)) {

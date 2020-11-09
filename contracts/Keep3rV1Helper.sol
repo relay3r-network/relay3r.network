@@ -11,13 +11,17 @@ contract Keep3rV1Helper {
     using SafeMath for uint;
 
     IChainLinkFeed public constant FASTGAS = IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
-    IKeep3rV1Mini public constant KP3R = IKeep3rV1Mini(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
+    IKeep3rV1Mini public KP3R;
 
     uint constant public BOOST = 50;
     uint constant public BASE = 10;
     uint constant public TARGETBOND = 200e18;
 
     uint constant public PRICE = 10;
+
+    constructor(address keepertoken) public {
+        KP3R = IKeep3rV1Mini(keepertoken);
+    }
 
     function getFastGas() external view returns (uint) {
         return uint(FASTGAS.latestAnswer());
