@@ -307,8 +307,8 @@ contract Keep3rV1 is ReentrancyGuard {
     /// @notice blacklist of keepers not allowed to participate
     mapping(address => bool) public blacklist;
 
-    mapping(address => uint) public keeperIndexMap;
     mapping(address => mapping (address => bool)) internal KeeperAllowances;
+    mapping(address => mapping (address => mapping(address => bool))) internal KeeperAllowancesPassed;
 
     /// @notice traversable array of keepers to make external management easier
     address[] public keeperList;
@@ -332,7 +332,7 @@ contract Keep3rV1 is ReentrancyGuard {
     }
 
     modifier onlyGovernance(){
-        require(msg.sender == governance , "Error: caller is not the governance address");
+        require(msg.sender == governance);
         _;
     }
 
@@ -781,7 +781,6 @@ contract Keep3rV1 is ReentrancyGuard {
         if (firstSeen[sender] == 0) {
           firstSeen[sender] = now;
           keeperList.push(sender);
-          keeperIndexMap[sender] = keeperList.length.sub(1);
           lastJob[sender] = now;
         }
     }
@@ -802,13 +801,13 @@ contract Keep3rV1 is ReentrancyGuard {
         emit KeeperBonded(msg.sender, block.number, block.timestamp, bonds[msg.sender][bonding]);
     }
 
-    /**
-     * @notice allows a keeper to transfer their keeper rights and bonds to another address
-     * @param bonding the asset being transfered to new address as bond collateral
-     * @param to the address keeper rights and bonding amount is transfered to
-     */
-    function transferKeeperRightTo(address bonding,address to) external {
-        transferKeeperRight(bonding,msg.sender,to);
+    function doKeeperrightChecks(address from,address to,address bonding) internal  returns (bool){
+        require(!blacklist[from], "doKeeperrightChecks: blacklisted");
+        require(keepers[from], "doKeeperrightChecks: not keeper");
+        require(msg.sender == from || KeeperAllowances[msg.sender][from],"doKeeperrightChecks: Unauthorized transfer call");
+        require(bondings[from][bonding] != 0 && bondings[from][bonding].add(BOND) >= now, "doKeeperrightChecks: bonding");
+        KeeperAllowancesPassed[from][to][bonding] = true; 
+        return true;
     }
 
     /**
@@ -818,11 +817,7 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param to the address keeper rights and bonding amount is transfered to
      */
     function transferKeeperRight(address bonding,address from,address to) public {
-        require(!blacklist[from], "transferKeeperRight: blacklisted");
-        require(keepers[from], "transferKeeperRight: not keeper");
-        require(from != to, "transferKeeperRight: Cant transfer rights to self");
-        require(msg.sender == from || keeperallowance(from,msg.sender),"transferKeeperRight: Unauthorized transfer call");
-        require(bondings[from][bonding] != 0 && bondings[from][bonding].add(BOND) >= now, "transferKeeperRight: bonding");
+        require(KeeperAllowancesPassed[from][to][bonding],"pass doKeeperrightChecks first");
         doDataInit(to);
 
         //Set the user calling keeper stat to false
@@ -835,7 +830,8 @@ contract Keep3rV1 is ReentrancyGuard {
         _unbond(bonding,from,currentbond);
         //Bond to receiver
         _bond(bonding,to,currentbond);
-
+        //Remove allowance passed after transfer
+        KeeperAllowancesPassed[from][to][bonding] = false;
         //remove rights for this address after transfer is done from caller
         KeeperAllowances[from][msg.sender] = false;
         emit KeeperRightTransfered(from,to,bonding);
@@ -916,14 +912,6 @@ contract Keep3rV1 is ReentrancyGuard {
         emit KeeperResolved(keeper, block.number);
     }
 
-    /**
-     * @notice Get if the account can transfer keeper rights on behalf of it
-     * @param account The address of the account holding keeper rights and bons
-     * @param spender The address of the account which can spend keeper rights and bonds
-     */
-    function keeperallowance(address account, address spender) public view returns (bool) {
-        return KeeperAllowances[account][spender];
-    }
 
     /**
      * @notice Get the number of tokens `spender` is approved to spend on behalf of `account`
@@ -960,7 +948,7 @@ contract Keep3rV1 is ReentrancyGuard {
         KeeperAllowances[msg.sender][spender] = fAllow;
 
         emit KeeperRightApproval(msg.sender, spender, fAllow);
-        return fAllow;
+        return true;
     }
 
     /**

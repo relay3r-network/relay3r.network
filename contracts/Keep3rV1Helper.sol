@@ -3,11 +3,12 @@ pragma solidity ^0.6.6;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/math/Math.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
 import "./interfaces/IChainLinkFeed.sol";
 import "./interfaces/Keep3r/IKeep3rV1Mini.sol";
 
-contract Keep3rV1Helper {
+contract Keep3rV1Helper is Ownable{
     using SafeMath for uint;
 
     IChainLinkFeed public constant FASTGAS = IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
@@ -19,7 +20,7 @@ contract Keep3rV1Helper {
 
     uint constant public PRICE = 10;
 
-    constructor(address keepertoken) public {
+    function setToken(address keepertoken) public onlyOwner{
         KP3R = IKeep3rV1Mini(keepertoken);
     }
 

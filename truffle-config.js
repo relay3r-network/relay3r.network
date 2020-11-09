@@ -44,7 +44,16 @@ module.exports = {
         ),
       network_id: 3, // Ropsten network
     },
-    live: {
+    development: {
+      host: "localhost",
+      provider: () =>
+      new HDWalletProvider(
+        mnemonic,
+        `http://localhost:8545/`
+      ),
+      network_id: "5777"
+    },
+        live: {
       provider: () =>
         new HDWalletProvider(
           mnemonic,
@@ -72,13 +81,11 @@ module.exports = {
   compilers: {
     solc: {
       version: "^0.6.12",
-      settings: {
-        evmVersion: 'istanbul', // Default: "petersburg"
+        // evmVersion: 'istanbul', // Default: "petersburg"
         optimizer: {
           enabled: true,
-          runs: 2000000,
+          runs: 200,
         },
-      },
     },
   },
 };
