@@ -140,13 +140,13 @@ contract UnitradeRelay3r is Ownable{
         return false;
     }
 
-    function getExecutableCount() public view returns (uint256 count) {
-        count = 0;
+    function hasExecutableOrdersPending() public view returns (bool) {
         for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength(); i++) {
             if (getIfExecuteable(i)) {
-                count++;
+                return true;
             }
         }
+        return false;
     }
 
     receive() external payable {
@@ -155,7 +155,7 @@ contract UnitradeRelay3r is Ownable{
     }
 
     function workable() public view returns (bool) {
-        return getExecutableCount() > 0;
+        return hasExecutableOrdersPending();
     }
 
     function work() public upkeep{
