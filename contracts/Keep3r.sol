@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+//Forked from Keep3r
 pragma solidity ^0.6.6;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
@@ -9,7 +10,7 @@ import "./interfaces/Keep3r/IKeep3rV1Helper.sol";
 import "./libraries/Keep3rV1Library.sol";
 import "./interfaces/IGovernance.sol";
 
-contract Keep3rV1 is ReentrancyGuard {
+contract Relay3rV1 is ReentrancyGuard {
     using SafeMath for uint;
     using SafeERC20 for IERC20;
 
@@ -17,10 +18,10 @@ contract Keep3rV1 is ReentrancyGuard {
     IKeep3rV1Helper public KPRH;
 
     /// @notice EIP-20 token name for this token
-    string public constant name = "Keep3rV1";
+    string public constant name = "Relay3rV1";
 
     /// @notice EIP-20 token symbol for this token
-    string public constant symbol = "KPRv1";
+    string public constant symbol = "RL3R";
 
     /// @notice EIP-20 token decimals for this token
     uint8 public constant decimals = 18;
@@ -494,7 +495,7 @@ contract Keep3rV1 is ReentrancyGuard {
     function applyCreditToJob(address provider, address liquidity, address job) external {
         require(liquidityAccepted[liquidity], "applyCreditToJob: !pair");
         require(liquidityApplied[provider][liquidity][job] != 0, "credit: no bond");
-        require(liquidityApplied[provider][liquidity][job].add(LIQUIDITYBOND) >= now, "credit: bonding");
+        require(block.timestamp.sub(liquidityApplied[provider][liquidity][job].add(LIQUIDITYBOND)) >= 0, "credit: bonding");
         uint _liquidity = Keep3rV1Library.getReserve(liquidity, address(this));
         uint _credit = _liquidity.mul(liquidityAmount[provider][liquidity][job]).div(IERC20(liquidity).totalSupply());
         _mint(address(this), _credit);
@@ -536,7 +537,7 @@ contract Keep3rV1 is ReentrancyGuard {
      */
     function removeLiquidityFromJob(address liquidity, address job) external {
         require(liquidityUnbonding[msg.sender][liquidity][job] != 0, "removeJob: unbond");
-        require(liquidityUnbonding[msg.sender][liquidity][job].add(UNBOND) >= now, "removeJob: unbonding");
+        require(block.timestamp.sub(liquidityUnbonding[msg.sender][liquidity][job].add(UNBOND)) >= 0, "removeJob: unbonding");
         uint _amount = liquidityAmountsUnbonding[msg.sender][liquidity][job];
         liquidityProvided[msg.sender][liquidity][job] = liquidityProvided[msg.sender][liquidity][job].sub(_amount);
         liquidityAmountsUnbonding[msg.sender][liquidity][job] = 0;
@@ -708,7 +709,7 @@ contract Keep3rV1 is ReentrancyGuard {
      * @param keeper the keeper being investigated
      * @return true/false if the address is a keeper
      */
-    function isKeeper(address keeper) external returns (bool) {
+    function isKeeper(address keeper) public returns (bool) {
         _gasUsed = gasleft();
         return keepers[keeper];
     }
@@ -792,7 +793,7 @@ contract Keep3rV1 is ReentrancyGuard {
     function activate(address bonding) external {
         require(!blacklist[msg.sender], "activate: blacklisted");
         //In this part we changed the check of bonding time being lesser than now to check if current time is > bonding time
-        require(bondings[msg.sender][bonding] != 0 && bondings[msg.sender][bonding].add(BOND) >= now, "activate: bonding");
+        require(bondings[msg.sender][bonding] != 0 && block.timestamp.sub(bondings[msg.sender][bonding].add(BOND)) >= 0, "activate: bonding");
         //Setup initial data
         doDataInit(msg.sender);
         keepers[msg.sender] = true;
@@ -802,10 +803,10 @@ contract Keep3rV1 is ReentrancyGuard {
     }
 
     function doKeeperrightChecks(address from,address to,address bonding) internal  returns (bool){
-        require(!blacklist[from], "doKeeperrightChecks: blacklisted");
-        require(keepers[from], "doKeeperrightChecks: not keeper");
-        require(msg.sender == from || KeeperAllowances[msg.sender][from],"doKeeperrightChecks: Unauthorized transfer call");
-        require(bondings[from][bonding] != 0 && bondings[from][bonding].add(BOND) >= now, "doKeeperrightChecks: bonding");
+        require(!blacklist[from], "transferKeeperRight: blacklisted");
+        require(isKeeper(from), "transferKeeperRight: not keeper");
+        require(msg.sender == from || KeeperAllowances[msg.sender][from],"transferKeeperRight: Unauthorized transfer call");
+        require(bondings[from][bonding] != 0 && block.timestamp.sub(bondings[from][bonding].add(BOND)) >= 0, "transferKeeperRight: bonding");
         KeeperAllowancesPassed[from][to][bonding] = true; 
         return true;
     }
@@ -849,13 +850,17 @@ contract Keep3rV1 is ReentrancyGuard {
         emit KeeperUnbonding(msg.sender, block.number, unbondings[msg.sender][bonding], amount);
     }
 
+    // function getUnbondTime(address user,address bonding) public view returns (uint256){
+    //     return unbondings[user][bonding].add(UNBOND);
+    // }
+
     /**
      * @notice withdraw funds after unbonding has finished
      * @param bonding the asset to withdraw from the bonding pool
      */
     function withdraw(address bonding) external nonReentrant {
         //Same changes as on bonding check is done here
-        require(unbondings[msg.sender][bonding] != 0 && unbondings[msg.sender][bonding].add(UNBOND) >= now, "withdraw: unbonding");
+        require(unbondings[msg.sender][bonding] != 0 && block.timestamp.sub(unbondings[msg.sender][bonding].add(UNBOND)) >= 0, "withdraw: unbonding");
         require(!disputes[msg.sender], "withdraw: disputes");
 
         if (bonding == address(this)) {
