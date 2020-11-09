@@ -7,7 +7,7 @@ interface IKeep3rV1 {
     function getPriorVotes(address account, uint blockNumber) external view returns (uint);
     function addVotes(address voter, uint amount) external;
     function removeVotes(address voter,uint amount)  external;
-    function addKPRCredit(address job, uint amount) external;
+    function addRLRCredit(address job, uint amount) external;
     function approveLiquidity(address liquidity) external;
     function revokeLiquidity(address liquidity) external;
     function addJob(address job) external;

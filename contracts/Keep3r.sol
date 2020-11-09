@@ -395,8 +395,8 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param job the job being credited
      * @param amount the amount of credit being added to the job
      */
-    function addKPRCredit(address job, uint amount) external onlyGovernance{
-        require(jobs[job], "addKPRCredit: !job");
+    function addRLRCredit(address job, uint amount) external onlyGovernance{
+        require(jobs[job], "addRLRCredit: !job");
         credits[job][address(this)] = credits[job][address(this)].add(amount);
 
         emit AddCredit(address(this), job, msg.sender, block.number, amount);

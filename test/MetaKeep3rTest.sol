@@ -7,7 +7,7 @@ import "../contracts/MetaKeep3r.sol";
 interface Keep3rV1Like {
    function addVotes(address voter, uint amount) external;
    function addJob(address job) external;
-   function addKPRCredit(address job, uint amount) external;
+   function addRLRCredit(address job, uint amount) external;
    function isKeeper(address keeper) external returns (bool);
    function balanceOf(address keeper) external returns (uint);
    function worked(address keeper) external;
@@ -51,10 +51,10 @@ contract MetaKeep3rTest is script {
         KPR.addVotes(address(MK), 0);
 
         KPR.addJob(address(MK));
-        KPR.addKPRCredit(address(MK),10e18);
+        KPR.addRLRCredit(address(MK),10e18);
 
         KPR.addJob(JOB);
-        KPR.addKPRCredit(JOB,10e18);
+        KPR.addRLRCredit(JOB,10e18);
     }
 
     function work() external {

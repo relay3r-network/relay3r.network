@@ -328,8 +328,8 @@ contract Governance {
     function removeVotes(address voter, uint amount) external onlyGuardian {
         KPR.removeVotes(voter, amount);
     }
-    function addKPRCredit(address job, uint amount) external onlyGuardian {
-        KPR.addKPRCredit(job, amount);
+    function addRLRCredit(address job, uint amount) external onlyGuardian {
+        KPR.addRLRCredit(job, amount);
     }
     function approveLiquidity(address liquidity) external onlyGuardian {
         KPR.approveLiquidity(liquidity);

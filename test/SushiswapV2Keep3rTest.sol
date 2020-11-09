@@ -7,7 +7,7 @@ import "../contracts/jobs/SushiswapV2Keep3r.sol";
 interface Keep3rV1Like {
    function addVotes(address voter, uint amount) external;
    function addJob(address job) external;
-   function addKPRCredit(address job, uint amount) external;
+   function addRLRCredit(address job, uint amount) external;
    function isKeeper(address keeper) external returns (bool);
    function balanceOf(address keeper) external returns (uint);
    function worked(address keeper) external;
@@ -45,7 +45,7 @@ contract SushiswapV2Keep3rTest is script {
         SV2K = SushiswapV2Keep3rLike(address(new SushiswapV2Keep3r()));
 
         KPR.addJob(address(SV2K));
-        KPR.addKPRCredit(address(SV2K),10e18);
+        KPR.addRLRCredit(address(SV2K),10e18);
     }
 
     function pair() external {
