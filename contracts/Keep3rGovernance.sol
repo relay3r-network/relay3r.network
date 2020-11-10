@@ -309,7 +309,7 @@ contract Governance {
     address public pendingGuardian;
 
     modifier onlyGuardian(){
-        require(msg.sender == guardian , "Error: caller is not the governance address");
+        require(msg.sender == guardian , "Error: caller is not the guardian address");
         _;
     }
 
@@ -347,7 +347,6 @@ contract Governance {
         KPR.setKeep3rHelper(kprh);
     }
     function setGovernance(address _governance) external onlyGuardian {
-        require(msg.sender == guardian, "Keep3rGovernance::setGovernance: !guardian");
         KPR.setGovernance(_governance);
     }
     function acceptGovernance() external onlyGuardian {
@@ -368,6 +367,16 @@ contract Governance {
 
     function setLiquidityFee(uint newFee) external onlyGuardian {
         KPR.setLiquidityFee(newFee);
+    }
+
+    function setBondingDelay(uint256 newDelay) external onlyGuardian {
+        KPR.setBondingDelay(newDelay);
+    }
+    function setUnbondingDelay(uint256 newDelay) external onlyGuardian {
+        KPR.setUnbondingDelay(newDelay);
+    }
+    function setLiquidityBondingDelay(uint256 newDelay) external onlyGuardian {
+        KPR.setLiquidityBondingDelay(newDelay);
     }
 
     mapping (bytes32 => bool) public queuedTransactions;
