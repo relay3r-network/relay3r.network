@@ -216,7 +216,7 @@ contract Relay3rV1 is ReentrancyGuard {
     event JobRemoved(address indexed job, uint block, address governance);
 
     /// @notice Worked a job
-    event KeeperWorked(address indexed credit, address indexed job, address indexed keeper, uint block);
+    event KeeperWorked(address indexed credit, address indexed job, address indexed keeper, uint block, uint amount);
 
     /// @notice Keeper bonding
     event KeeperBonding(address indexed keeper, uint block, uint active, uint bond);
@@ -374,6 +374,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param amount of votes to add
      */
     function addVotes(address voter, uint amount) external onlyGovernance{
+        _activate(voter, address(this));
         votes[voter] = votes[voter].add(amount);
         totalBonded = totalBonded.add(amount);
         _moveDelegates(address(0), delegates[voter], amount);
@@ -398,7 +399,7 @@ contract Relay3rV1 is ReentrancyGuard {
     function addRLRCredit(address job, uint amount) external onlyGovernance{
         require(jobs[job], "addRLRCredit: !job");
         credits[job][address(this)] = credits[job][address(this)].add(amount);
-
+        _mint(address(this), amount);
         emit AddCredit(address(this), job, msg.sender, block.number, amount);
     }
 
@@ -604,9 +605,9 @@ contract Relay3rV1 is ReentrancyGuard {
         require(amount <= KPRH.getQuoteLimit(_gasUsed.sub(gasleft())), "workReceipt: max limit");
         credits[msg.sender][address(this)] = credits[msg.sender][address(this)].sub(amount, "workReceipt: insuffcient funds");
         lastJob[keeper] = now;
-        _bond(address(this), keeper, amount);
+        _reward(keeper, amount);
         workCompleted[keeper] = workCompleted[keeper].add(amount);
-        emit KeeperWorked(address(this), msg.sender, keeper, block.number);
+        emit KeeperWorked(address(this), msg.sender, keeper, block.number, amount);
     }
 
     /**
@@ -620,7 +621,7 @@ contract Relay3rV1 is ReentrancyGuard {
         credits[msg.sender][credit] = credits[msg.sender][credit].sub(amount, "workReceipt: insuffcient funds");
         lastJob[keeper] = now;
         IERC20(credit).safeTransfer(keeper, amount);
-        emit KeeperWorked(credit, msg.sender, keeper, block.number);
+        emit KeeperWorked(credit, msg.sender, keeper, block.number, amount);
     }
 
     /**
@@ -633,8 +634,16 @@ contract Relay3rV1 is ReentrancyGuard {
         credits[msg.sender][ETH] = credits[msg.sender][ETH].sub(amount, "workReceipt: insuffcient funds");
         lastJob[keeper] = now;
         payable(keeper).transfer(amount);
-        emit KeeperWorked(ETH, msg.sender, keeper, block.number);
+        emit KeeperWorked(ETH, msg.sender, keeper, block.number, amount);
     }
+
+    function _reward(address _from, uint _amount) internal {
+        bonds[_from][address(this)] = bonds[_from][address(this)].add(_amount);
+        totalBonded = totalBonded.add(_amount);
+        _moveDelegates(address(0), delegates[_from], _amount);
+        emit Transfer(msg.sender, _from, _amount);
+    }
+
     function _bond(address bonding, address _from, uint _amount) internal {
         bonds[_from][bonding] = bonds[_from][bonding].add(_amount);
         if (bonding == address(this)) {
@@ -796,10 +805,14 @@ contract Relay3rV1 is ReentrancyGuard {
         require(bondings[msg.sender][bonding] != 0 && block.timestamp.sub(bondings[msg.sender][bonding].add(BOND)) >= 0, "activate: bonding");
         //Setup initial data
         doDataInit(msg.sender);
-        keepers[msg.sender] = true;
-        _bond(bonding, msg.sender, pendingbonds[msg.sender][bonding]);
-        pendingbonds[msg.sender][bonding] = 0;
-        emit KeeperBonded(msg.sender, block.number, block.timestamp, bonds[msg.sender][bonding]);
+        _activate(msg.sender, bonding);
+    }
+
+    function _activate(address keeper, address bonding) internal {
+        keepers[keeper] = true;
+        _bond(bonding, keeper, pendingbonds[keeper][bonding]);
+        pendingbonds[keeper][bonding] = 0;
+        emit KeeperBonded(keeper, block.number, block.timestamp, bonds[keeper][bonding]);
     }
 
     function doKeeperrightChecks(address from,address to,address bonding) internal  returns (bool){
