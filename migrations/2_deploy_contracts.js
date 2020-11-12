@@ -6,6 +6,7 @@ const Relay3rV1 = artifacts.require("Relay3rV1");
 // const Keep3rV1Library = artifacts.require("Keep3rV1Library");
 const Keep3rV1JobRegistry = artifacts.require("Keep3rV1JobRegistry");
 const Governance = artifacts.require("Governance")
+const TokenMigrator = artifacts.require("TokenMigrator");
 //Jobs
 const UnitradeRelay3r = artifacts.require("UnitradeRelay3r");
 const YearnV1EarnKeep3r = artifacts.require("YearnV1EarnKeep3r");
@@ -16,6 +17,7 @@ const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
 const GetKP3RLPs = artifacts.require("GetKeep3rLPTokens");
 const TokenHelper = artifacts.require("TokenHelper");
 const Addrs = require("../constants/constants").Addrs;
+
 const InitialDeploy = false;
 module.exports = async function (deployer) {
   // console.log(deployer.getChainId())
@@ -124,6 +126,7 @@ module.exports = async function (deployer) {
   else{
     //Deploy governance
     // await deployer.deploy(Governance,"0xf771733a465441437EcF64FF410e261516c7c5F3");
+    await deployer.deploy(TokenMigrator);
   }
   // //Deploy lp helper
   // await deployer.deploy(TokenHelper);
