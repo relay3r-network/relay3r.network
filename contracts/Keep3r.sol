@@ -863,10 +863,6 @@ contract Relay3rV1 is ReentrancyGuard {
         emit KeeperUnbonding(msg.sender, block.number, unbondings[msg.sender][bonding], amount);
     }
 
-    // function getUnbondTime(address user,address bonding) public view returns (uint256){
-    //     return unbondings[user][bonding].add(UNBOND);
-    // }
-
     /**
      * @notice withdraw funds after unbonding has finished
      * @param bonding the asset to withdraw from the bonding pool

@@ -20,7 +20,7 @@ contract CoreFlashArbRelay3r {
     }
 
     //Set new contract address incase core devs change the flash arb contract
-    function setCoreArbAddress(adddress newContract) public onlyOwner {
+    function setCoreArbAddress(address newContract) public onlyOwner {
         CoreArb = ICoreFlashArb(newContract);
     }
 
