@@ -3,7 +3,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 import '../interfaces/ICoreFlashArb.sol';
 
-contract CoreFlashArbRelay3r {
+contract CoreFlashArbRelay3r is Ownable{
 
     modifier upkeep() {
         require(RL3R.isKeeper(msg.sender), "::isKeeper: keeper is not registered");

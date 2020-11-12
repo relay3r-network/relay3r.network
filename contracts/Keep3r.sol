@@ -308,8 +308,7 @@ contract Relay3rV1 is ReentrancyGuard {
     /// @notice blacklist of keepers not allowed to participate
     mapping(address => bool) public blacklist;
 
-    mapping(address => mapping (address => bool)) internal KeeperAllowances;
-    mapping(address => mapping (address => mapping(address => bool))) internal KeeperAllowancesPassed;
+    mapping(address => mapping (address => mapping(address => bool))) internal KeeperAllowances;
 
     /// @notice traversable array of keepers to make external management easier
     address[] public keeperList;
@@ -342,7 +341,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param job the job being credited
      */
     function addCreditETH(address job) external payable {
-        require(jobs[job], "addCreditETH: !job");
+        require(jobs[job], "!job");
         uint _fee = msg.value.mul(FEE).div(BASE);
         credits[job][ETH] = credits[job][ETH].add(msg.value.sub(_fee));
         payable(governance).transfer(_fee);
@@ -357,7 +356,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param amount the amount of credit being added to the job
      */
     function addCredit(address credit, address job, uint amount) external nonReentrant {
-        require(jobs[job], "addCreditETH: !job");
+        require(jobs[job], "!job");
         uint _before = IERC20(credit).balanceOf(address(this));
         IERC20(credit).safeTransferFrom(msg.sender, address(this), amount);
         uint _received = IERC20(credit).balanceOf(address(this)).sub(_before);
@@ -397,7 +396,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param amount the amount of credit being added to the job
      */
     function addRLRCredit(address job, uint amount) external onlyGovernance{
-        require(jobs[job], "addRLRCredit: !job");
+        require(jobs[job], "!job");
         credits[job][address(this)] = credits[job][address(this)].add(amount);
         _mint(address(this), amount);
         emit AddCredit(address(this), job, msg.sender, block.number, amount);
@@ -408,7 +407,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param liquidity the liquidity no longer accepted
      */
     function approveLiquidity(address liquidity) external onlyGovernance{
-        require(!liquidityAccepted[liquidity], "approveLiquidity: !pair");
+        require(!liquidityAccepted[liquidity], "!pair");
         liquidityAccepted[liquidity] = true;
         liquidityPairs.push(liquidity);
     }
@@ -474,7 +473,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param amount the amount of liquidity tokens to use
      */
     function addLiquidityToJob(address liquidity, address job, uint amount) external nonReentrant {
-        require(liquidityAccepted[liquidity], "addLiquidityToJob: !pair");
+        require(liquidityAccepted[liquidity], "!pair");
         IERC20(liquidity).safeTransferFrom(msg.sender, address(this), amount);
         liquidityProvided[msg.sender][liquidity][job] = liquidityProvided[msg.sender][liquidity][job].add(amount);
         liquidityApplied[msg.sender][liquidity][job] = now;
@@ -494,9 +493,9 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param job the job that is receiving the credit
      */
     function applyCreditToJob(address provider, address liquidity, address job) external {
-        require(liquidityAccepted[liquidity], "applyCreditToJob: !pair");
-        require(liquidityApplied[provider][liquidity][job] != 0, "credit: no bond");
-        require(block.timestamp.sub(liquidityApplied[provider][liquidity][job].add(LIQUIDITYBOND)) >= 0, "credit: bonding");
+        require(liquidityAccepted[liquidity], "!pair");
+        require(liquidityApplied[provider][liquidity][job] != 0, "no bond");
+        require(block.timestamp.sub(liquidityApplied[provider][liquidity][job].add(LIQUIDITYBOND)) >= 0, "bonding");
         uint _liquidity = Keep3rV1Library.getReserve(liquidity, address(this));
         uint _credit = _liquidity.mul(liquidityAmount[provider][liquidity][job]).div(IERC20(liquidity).totalSupply());
         _mint(address(this), _credit);
@@ -513,10 +512,10 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param amount the amount of liquidity being removed
      */
     function unbondLiquidityFromJob(address liquidity, address job, uint amount) external {
-        require(liquidityAmount[msg.sender][liquidity][job] == 0, "credit: pending credit");
+        require(liquidityAmount[msg.sender][liquidity][job] == 0, "pending credit");
         liquidityUnbonding[msg.sender][liquidity][job] = now;
         liquidityAmountsUnbonding[msg.sender][liquidity][job] = liquidityAmountsUnbonding[msg.sender][liquidity][job].add(amount);
-        require(liquidityAmountsUnbonding[msg.sender][liquidity][job] <= liquidityProvided[msg.sender][liquidity][job], "unbondLiquidityFromJob: insufficient funds");
+        require(liquidityAmountsUnbonding[msg.sender][liquidity][job] <= liquidityProvided[msg.sender][liquidity][job], "insufficient funds");
 
         uint _liquidity = Keep3rV1Library.getReserve(liquidity, address(this));
         uint _credit = _liquidity.mul(amount).div(IERC20(liquidity).totalSupply());
@@ -537,8 +536,8 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param job the job being unbound from
      */
     function removeLiquidityFromJob(address liquidity, address job) external {
-        require(liquidityUnbonding[msg.sender][liquidity][job] != 0, "removeJob: unbond");
-        require(block.timestamp.sub(liquidityUnbonding[msg.sender][liquidity][job].add(UNBOND)) >= 0, "removeJob: unbonding");
+        require(liquidityUnbonding[msg.sender][liquidity][job] != 0, "unbond");
+        require(block.timestamp.sub(liquidityUnbonding[msg.sender][liquidity][job].add(UNBOND)) >= 0, "unbonding");
         uint _amount = liquidityAmountsUnbonding[msg.sender][liquidity][job];
         liquidityProvided[msg.sender][liquidity][job] = liquidityProvided[msg.sender][liquidity][job].sub(_amount);
         liquidityAmountsUnbonding[msg.sender][liquidity][job] = 0;
@@ -601,9 +600,9 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param amount the reward that should be allocated
      */
     function workReceipt(address keeper, uint amount) public {
-        require(jobs[msg.sender], "workReceipt: !job");
-        require(amount <= KPRH.getQuoteLimit(_gasUsed.sub(gasleft())), "workReceipt: max limit");
-        credits[msg.sender][address(this)] = credits[msg.sender][address(this)].sub(amount, "workReceipt: insuffcient funds");
+        require(jobs[msg.sender], "!job");
+        require(amount <= KPRH.getQuoteLimit(_gasUsed.sub(gasleft())), "max limit");
+        credits[msg.sender][address(this)] = credits[msg.sender][address(this)].sub(amount, "insuffcient funds");
         lastJob[keeper] = now;
         _reward(keeper, amount);
         workCompleted[keeper] = workCompleted[keeper].add(amount);
@@ -618,7 +617,7 @@ contract Relay3rV1 is ReentrancyGuard {
      */
     function receipt(address credit, address keeper, uint amount) external {
         require(jobs[msg.sender], "receipt: !job");
-        credits[msg.sender][credit] = credits[msg.sender][credit].sub(amount, "workReceipt: insuffcient funds");
+        credits[msg.sender][credit] = credits[msg.sender][credit].sub(amount, "receipt: insuffcient funds");
         lastJob[keeper] = now;
         IERC20(credit).safeTransfer(keeper, amount);
         emit KeeperWorked(credit, msg.sender, keeper, block.number, amount);
@@ -631,7 +630,7 @@ contract Relay3rV1 is ReentrancyGuard {
      */
     function receiptETH(address keeper, uint amount) public {
         require(jobs[msg.sender], "receipt: !job");
-        credits[msg.sender][ETH] = credits[msg.sender][ETH].sub(amount, "workReceipt: insuffcient funds");
+        credits[msg.sender][ETH] = credits[msg.sender][ETH].sub(amount, "insuffcient funds");
         lastJob[keeper] = now;
         payable(keeper).transfer(amount);
         emit KeeperWorked(ETH, msg.sender, keeper, block.number, amount);
@@ -666,7 +665,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param job address of the contract for which work should be performed
      */
     function addJob(address job) external onlyGovernance{
-        require(!jobs[job], "addJob: job known");
+        require(!jobs[job], "job known");
         jobs[job] = true;
         jobList.push(job);
         emit JobAdded(job, block.number, msg.sender);
@@ -709,7 +708,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @notice Allows pendingGovernance to accept their role as governance (protection pattern)
      */
     function acceptGovernance() external {
-        require(msg.sender == pendingGovernance, "acceptGovernance: !pendingGov");
+        require(msg.sender == pendingGovernance, "!pendingGov");
         governance = pendingGovernance;
     }
 
@@ -762,7 +761,7 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param amount the amount of bonding asset being bound
      */
     function bond(address bonding, uint amount) external nonReentrant {
-        require(!blacklist[msg.sender], "bond: blacklisted");
+        require(!blacklist[msg.sender], "blacklisted");
         //In this part we changed the addition of current time + bond time to the time bond was called
         bondings[msg.sender][bonding] = now;
         if (bonding == address(this)) {
@@ -800,9 +799,9 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param bonding the asset being activated as bond collateral
      */
     function activate(address bonding) external {
-        require(!blacklist[msg.sender], "activate: blacklisted");
+        require(!blacklist[msg.sender], "blacklisted");
         //In this part we changed the check of bonding time being lesser than now to check if current time is > bonding time
-        require(bondings[msg.sender][bonding] != 0 && block.timestamp.sub(bondings[msg.sender][bonding].add(BOND)) >= 0, "activate: bonding");
+        require(bondings[msg.sender][bonding] != 0 && block.timestamp.sub(bondings[msg.sender][bonding].add(BOND)) >= 0, "bonding");
         //Setup initial data
         doDataInit(msg.sender);
         _activate(msg.sender, bonding);
@@ -815,15 +814,6 @@ contract Relay3rV1 is ReentrancyGuard {
         emit KeeperBonded(keeper, block.number, block.timestamp, bonds[keeper][bonding]);
     }
 
-    function doKeeperrightChecks(address from,address to,address bonding) internal  returns (bool){
-        require(!blacklist[from], "transferKeeperRight: blacklisted");
-        require(isKeeper(from), "transferKeeperRight: not keeper");
-        require(msg.sender == from || KeeperAllowances[msg.sender][from],"transferKeeperRight: Unauthorized transfer call");
-        require(bondings[from][bonding] != 0 && block.timestamp.sub(bondings[from][bonding].add(BOND)) >= 0, "transferKeeperRight: bonding");
-        KeeperAllowancesPassed[from][to][bonding] = true; 
-        return true;
-    }
-
     /**
      * @notice allows a keeper to transfer their keeper rights and bonds to another address
      * @param bonding the asset being transfered to new address as bond collateral
@@ -831,7 +821,11 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param to the address keeper rights and bonding amount is transfered to
      */
     function transferKeeperRight(address bonding,address from,address to) public {
-        require(KeeperAllowancesPassed[from][to][bonding],"pass doKeeperrightChecks first");
+        //Removed dokeeperRightChecks and put it here
+        require(isKeeper(from));
+        require(msg.sender == from || KeeperAllowances[msg.sender][from][bonding]);
+        require(bondings[from][bonding] != 0 && block.timestamp.sub(bondings[from][bonding].add(BOND)) >= 0);
+
         doDataInit(to);
 
         //Set the user calling keeper stat to false
@@ -844,10 +838,8 @@ contract Relay3rV1 is ReentrancyGuard {
         _unbond(bonding,from,currentbond);
         //Bond to receiver
         _bond(bonding,to,currentbond);
-        //Remove allowance passed after transfer
-        KeeperAllowancesPassed[from][to][bonding] = false;
         //remove rights for this address after transfer is done from caller
-        KeeperAllowances[from][msg.sender] = false;
+        KeeperAllowances[from][msg.sender][bonding] = false;
         emit KeeperRightTransfered(from,to,bonding);
     }
 
@@ -869,8 +861,8 @@ contract Relay3rV1 is ReentrancyGuard {
      */
     function withdraw(address bonding) external nonReentrant {
         //Same changes as on bonding check is done here
-        require(unbondings[msg.sender][bonding] != 0 && block.timestamp.sub(unbondings[msg.sender][bonding].add(UNBOND)) >= 0, "withdraw: unbonding");
-        require(!disputes[msg.sender], "withdraw: disputes");
+        require(unbondings[msg.sender][bonding] != 0 && block.timestamp.sub(unbondings[msg.sender][bonding].add(UNBOND)) >= 0, "unbonding");
+        require(!disputes[msg.sender], "disputes");
 
         if (bonding == address(this)) {
             _transferTokens(address(this), msg.sender, partialUnbonding[msg.sender][bonding]);
@@ -958,8 +950,8 @@ contract Relay3rV1 is ReentrancyGuard {
      * @param fAllow whether this spender should be able to transfer rights
      * @return Whether or not the approval succeeded
      */
-    function keeperrightapprove(address spender,bool fAllow) public returns (bool) {
-        KeeperAllowances[msg.sender][spender] = fAllow;
+    function keeperrightapprove(address spender,address bonding,bool fAllow) public returns (bool) {
+        KeeperAllowances[msg.sender][spender][bonding] = fAllow;
 
         emit KeeperRightApproval(msg.sender, spender, fAllow);
         return true;

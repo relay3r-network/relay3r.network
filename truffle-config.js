@@ -81,11 +81,13 @@ module.exports = {
   compilers: {
     solc: {
       version: "^0.6.12",
-        // evmVersion: 'istanbul', // Default: "petersburg"
-        optimizer: {
-          enabled: true,
-          runs: 200,
-        },
+      settings:{
+      // evmVersion: 'istanbul', // Default: "petersburg"
+      optimizer: {
+        enabled: true,
+        runs: 50000,
+      },
     },
   },
+}
 };
