@@ -1,3 +1,5 @@
+import '@openzeppelin/contracts/access/Ownable.sol';
+
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 import '../interfaces/ICoreFlashArb.sol';
 
@@ -15,6 +17,11 @@ contract CoreFlashArbRelay3r {
     constructor (address token,address corearb) public {
         RL3R = IKeep3rV1Mini(token);
         CoreArb = ICoreFlashArb(corearb);
+    }
+
+    //Set new contract address incase core devs change the flash arb contract
+    function setCoreArbAddress(adddress newContract) public onlyOwner {
+        CoreArb = ICoreFlashArb(newContract);
     }
 
     function workable() public view returns (bool){
