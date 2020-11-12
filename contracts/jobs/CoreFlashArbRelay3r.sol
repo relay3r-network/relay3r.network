@@ -1,4 +1,5 @@
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 import '../interfaces/ICoreFlashArb.sol';
@@ -13,10 +14,12 @@ contract CoreFlashArbRelay3r is Ownable{
 
     IKeep3rV1Mini public RL3R;
     ICoreFlashArb public CoreArb;
+    IERC20 public CoreToken;
     //Init interfaces with addresses
-    constructor (address token,address corearb) public {
+    constructor (address token,address corearb,address coretoken) public {
         RL3R = IKeep3rV1Mini(token);
         CoreArb = ICoreFlashArb(corearb);
+        CoreToken = IERC20(coretoken);
     }
 
     //Set new contract address incase core devs change the flash arb contract
@@ -37,6 +40,8 @@ contract CoreFlashArbRelay3r is Ownable{
             if(CoreArb.strategyProfitInReturnToken(i) > 0)
                 CoreArb.executeStrategy(i);
         }
+        //At the end send the core gotten to the relay3r executing the work func
+        CoreToken.transfer(tx.origin,CoreToken.balanceOf(address(this)));
     }
 
 }
