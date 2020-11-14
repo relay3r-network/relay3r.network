@@ -41,7 +41,7 @@ contract CoreFlashArbRelay3r is Ownable{
                 CoreArb.executeStrategy(i);
         }
         //At the end send the core gotten to the relay3r executing the work func
-        CoreToken.transfer(tx.origin,CoreToken.balanceOf(address(this)));
+        CoreToken.transfer(msg.sender,CoreToken.balanceOf(address(this)));
     }
 
 }

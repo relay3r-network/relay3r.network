@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
+import '@openzeppelin/contracts/math/SafeMath.sol';
+
 import './libraries/TokenHelper.sol';
 import './libraries/UniswapV2Library.sol';
 
 import './interfaces/Uniswap/IUniswapV2Router.sol';
 import './interfaces/Uniswap/IWETH.sol';
 
-contract GetKeep3rLPTokens{
+contract GetRelay3rLPTokens{
+    using SafeMath for uint256;
     //define constants
     bool hasApproved = false;
     address owner = msg.sender;
@@ -14,21 +17,23 @@ contract GetKeep3rLPTokens{
     address self = address(this);
 
     address public  UniswapRouter;
-    IERC20 public KeeperInterface;
-
+    IERC20 public Relay3rInterface;
+    IUniswapV2Router uniswapInterface;
+    IERC20 public pairInterface;
+    IWETH wethInterface;
     constructor(address UniRouter,address KeeperToken) public{
         UniswapRouter = UniRouter;
-        KeeperInterface = IERC20(KeeperToken);
+        Relay3rInterface = IERC20(KeeperToken);
+        uniswapInterface = IUniswapV2Router(UniswapRouter);
+        pairInterface = IERC20(UniswapV2Library.pairFor(uniswapInterface.factory(),address(Relay3rInterface),uniswapInterface.WETH()));
+        wethInterface = IWETH(uniswapInterface.WETH());
     }
 
-    IUniswapV2Router uniswapInterface = IUniswapV2Router(UniswapRouter);
-    IERC20 public pairInterface = IERC20(UniswapV2Library.pairFor(uniswapInterface.factory(),address(KeeperInterface),uniswapInterface.WETH()));
-    IWETH wethInterface = IWETH(uniswapInterface.WETH());
 
      function getPathForETHToToken() private view returns (address[] memory) {
         address[] memory path = new address[](2);
         path[0] = uniswapInterface.WETH();
-        path[1] = address(KeeperInterface);
+        path[1] = address(Relay3rInterface);
         return path;
     }
 
@@ -37,13 +42,13 @@ contract GetKeep3rLPTokens{
     }
 
     function DoApprove() internal {
-        doInfiniteApprove(KeeperInterface);
+        doInfiniteApprove(Relay3rInterface);
         doInfiniteApprove(pairInterface);
         doInfiniteApprove(wethInterface);
     }
 
-    function getKeeperBalance() public view returns (uint256){
-       return tokenHelper.getTokenBalance(address(KeeperInterface));
+    function GetRelay3rBalance() public view returns (uint256){
+       return tokenHelper.getTokenBalance(address(Relay3rInterface));
     }
 
     function getWETHBalance() public view returns (uint256){
@@ -61,7 +66,7 @@ contract GetKeep3rLPTokens{
         }
         //Convert ETH to WETH
         wethInterface.deposit{value:msg.value}();
-        convertWETHToKP3R();
+        convertWETHToRL3R();
         addLiq(msg.sender);
         //Send back the eth dust given from refund
         if(getWETHBalance() > 0){
@@ -71,17 +76,17 @@ contract GetKeep3rLPTokens{
         }
     }
 
-    function convertWETHToKP3R() internal {
-        uniswapInterface.swapExactTokensForTokensSupportingFeeOnTransferTokens(getWETHBalance() / 2,1,getPathForETHToToken(),self,INF);
+    function convertWETHToRL3R() internal {
+        uniswapInterface.swapExactTokensForTokens(getWETHBalance().div(2),UniswapV2Library.getAmountsOut(uniswapInterface.factory(), getWETHBalance().div(2),getPathForETHToToken())[1], getPathForETHToToken(),self,INF);
     }
 
     function addLiq(address dest) internal {
         //finally add liquidity
-        uniswapInterface.addLiquidity(address(KeeperInterface),uniswapInterface.WETH(),getKeeperBalance(),getWETHBalance(),1,1,dest,INF);
+        uniswapInterface.addLiquidity(uniswapInterface.WETH(),address(Relay3rInterface),getWETHBalance(),GetRelay3rBalance(),1,1,dest,INF);
     }
 
     function withdrawFunds() public {
         tokenHelper.recoverERC20(uniswapInterface.WETH(),owner);
-        tokenHelper.recoverERC20((address(KeeperInterface)),owner);
+        tokenHelper.recoverERC20((address(Relay3rInterface)),owner);
     }
 }
