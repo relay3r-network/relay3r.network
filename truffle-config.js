@@ -85,7 +85,7 @@ module.exports = {
       // evmVersion: 'istanbul', // Default: "petersburg"
       optimizer: {
         enabled: true,
-        runs: 50000,
+        runs: 200,
       },
     },
   },

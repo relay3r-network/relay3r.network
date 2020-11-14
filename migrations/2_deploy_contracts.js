@@ -18,10 +18,11 @@ const CoreFlashArbRelay3r = artifacts.require("CoreFlashArbRelay3r");
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
 // const TokenHelper = artifacts.require("TokenHelper");
 const Addrs = require("../constants/constants").Addrs;
+const LiqMigrator = artifacts.require("LiqMigrator");
 
-const InitialDeployWithMigrator = true;
+const InitialDeployWithMigrator = false;
 const TestMigrator = false;
-
+const DeployLiqMigrator = true;
 module.exports = async function (deployer) {
   // console.log(deployer.getChainId())
       // Deploy token with library
@@ -160,6 +161,9 @@ module.exports = async function (deployer) {
     console.log(Token1SupplyAfterMigrate.toString() === "0")//Supply of token 1 to be 0 after migration
     console.log(Token2SupplyAfterMigrate.toString() === "1000000000000000000000") //supply of token 2 to be 1k after migration
 
+  }
+  else if (DeployLiqMigrator){
+    await deployer.deploy(LiqMigrator);
   }
 
 };
