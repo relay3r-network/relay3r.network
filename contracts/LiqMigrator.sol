@@ -29,42 +29,41 @@ contract LiqMigrator is Ownable{
 
     ITokenMigrator public tokenMigrator = ITokenMigrator(RLRSwapper);
 
-    function getPathForTokenToETH() private view returns (address[] memory) {
-        address[] memory path = new address[](2);
-        path[0] = tokenMigrator.RL3R();
-        path[1] = WETH;//WETH
-        return path;
-    }
+    function removeETHLiquidityFromToken() public onlyOwner {
+        //Approve token and lp token to be spent
+         IERC20(tokenMigrator.RL3R()).approve(UniRouter,getTokenBalance(tokenMigrator.RL3R()));
+         IERC20(LPPairRL3R).approve(UniRouter,getTokenBalance(LPPairRL3R));
 
-    function removeETHLiquidityFromToken() internal {
         // remove liquidity
-        address[] memory paths = getPathForTokenToETH();
-        uniswapInterface.removeLiquidity(paths[0],paths[1], getTokenBalance(LPPairRL3R), 0, 0, address(this), now + 20);
+        uniswapInterface.removeLiquidityETH(tokenMigrator.RL3R(), getTokenBalance(LPPairRL3R), 1, 1, address(this), now + 20);
     }
 
-    function SwapRL3RToRLR() internal {
+    receive() external payable {
+        if(msg.sender != UniRouter){
+            revert();
+        }
+    }
+
+    function SwapRL3RToRLR() public onlyOwner {
         //Approve spend of rl3r tokens by swapper contact
         IERC20(tokenMigrator.RL3R()).approve(RLRSwapper,getTokenBalance(tokenMigrator.RL3R()));
         //Swap it
         tokenMigrator.swapTokens(getTokenBalance(tokenMigrator.RL3R()));
     }
 
-    function AddLiqRLR() internal {
+    function AddLiqRLR() public onlyOwner {
         uint256 tokenBalance = getTokenBalance(tokenMigrator.RLR());
-        uint256 ethBalance = getTokenBalance(WETH);
         //Approve uniswap router to spend token and weth
         IERC20(tokenMigrator.RLR()).approve(UniRouter,tokenBalance);
-        IERC20(WETH).approve(UniRouter,ethBalance);
 
-        uniswapInterface.addLiquidity
+        uniswapInterface.addLiquidityETH
+        {value : address(this).balance }
         (
-            WETH,
             tokenMigrator.RLR(),
-            ethBalance,
             tokenBalance,
-            ethBalance,
             tokenBalance,
-            TimeLockContract,
+            address(this).balance,
+            owner(),
             now
         );
     }
