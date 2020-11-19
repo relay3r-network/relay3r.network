@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import "./interfaces/IChainLinkFeed.sol";
 import "./interfaces/Keep3r/IKeep3rV1Mini.sol";
 
-contract Keep3rV1Helper is Ownable{
+contract Keep3rV1HelperLegacyV1 is Ownable{
     using SafeMath for uint;
 
     IChainLinkFeed public constant FASTGAS = IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);

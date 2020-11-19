@@ -1,7 +1,7 @@
 var Web3 = require("web3");
 
 //Keeoer core contracts
-const Keep3rV1HelperLegacy = artifacts.require("Keep3rV1HelperLegacy");
+const Keep3rV1HelperLegacyV1 = artifacts.require("Keep3rV1HelperLegacyV1");
 const Keep3rV1Library = artifacts.require("Keep3rV1Library");
 const Relay3rV2 = artifacts.require("Relay3rV2");
 const Keep3rV1JobRegistry = artifacts.require("Keep3rV1JobRegistry");
@@ -12,22 +12,25 @@ const MockBurnableToken = artifacts.require("BurnableToken");
 //Jobs
 const UnitradeRelay3r = artifacts.require("UnitradeRelay3r");
 const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
-const CoreFlashArbRelay3r = artifacts.require("CoreFlashArbRelay3r");
+const CoreFlashArbRelay3rOpt = artifacts.require("CoreFlashArbRelay3rOpt");
 
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
 // const TokenHelper = artifacts.require("TokenHelper");
-const Addrs = require("../constants/constants").Addrs;
-const LiqMigrator = artifacts.require("LiqMigrator");
 
+const Addrs = require("../constants/constants").Addrs;
+
+const LiqMigratorNew = artifacts.require("LiqMigratorNew");
+
+/* Various deploy stages */
 const InitialDeployWithMigrator = false;
 const TestMigrator = false;
-const DeployLiqMigrator = true;
-module.exports = async function (deployer) {
-  // console.log(deployer.getChainId())
-      // Deploy token with library
+const DeployLiqMigrator = false;
+const DeployLegacyHelper =false;
+const DeployNewCoreJob = true;
 
-  // const RelayerTokenv1 = Relay3rV2.at(Addrs.RL3RToken[1]);
+module.exports = async function (deployer) {
+      // Deploy token with library
   if (InitialDeployWithMigrator) {
     //Deploy v2 token
     await deployer.deploy(Keep3rV1Library);
@@ -40,8 +43,8 @@ module.exports = async function (deployer) {
     await RelayerTokenD.mint(InitiaLSupply); //109965 RLR
 
     //Deploy helper
-    await deployer.deploy(Keep3rV1HelperLegacy);
-    const keeperHelperD = await Keep3rV1HelperLegacy.deployed();
+    await deployer.deploy(Keep3rV1HelperLegacyV1);
+    const keeperHelperD = await Keep3rV1HelperLegacyV1.deployed();
     // console.log(`KEEPER HELPER IS ${keeperHelperD.address}`);
     await keeperHelperD.setToken(RelayerTokenD.address);
     //Set helper on keeper token
@@ -60,10 +63,10 @@ module.exports = async function (deployer) {
     await RelayerTokenD.addJob(UnitradeJob.address);
 
     //Deploy CoreFlashArbRelay3r
-    await deployer.deploy(CoreFlashArbRelay3r, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
-    const CoreFlashArbRelay3rJob = await CoreFlashArbRelay3r.deployed();
+    await deployer.deploy(CoreFlashArbRelay3rOpt, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
+    const CoreFlashArbRelay3rOpt = await CoreFlashArbRelay3rOpt.deployed();
     //Add to jobs on keeper token
-    await RelayerTokenD.addJob(CoreFlashArbRelay3rJob.address);
+    await RelayerTokenD.addJob(CoreFlashArbRelay3rOpt.address);
 
     //Deploy keeper job registry
     await deployer.deploy(Keep3rV1JobRegistry);
@@ -74,21 +77,21 @@ module.exports = async function (deployer) {
       UniswapV2SlidingOracleJob.address,
       "UniswapV2SlidingOracle",
       "",
-      "https://github.com/relay3r-network/relay3r-jobs/blob/main/jobs/uniswapv2slidingoracle.js"
+      "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/uniswapv2slidingoracle.js"
     );
 
     await KeeperJobRegistryD.add(
       UnitradeJob.address,
       "UnitradeRelay3r",
       "",
-      "https://github.com/relay3r-network/relay3r-jobs/blob/main/jobs/unitraderelay3r.js"
+      "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/unitraderelay3r.js"
     );
 
     await KeeperJobRegistryD.add(
-      CoreFlashArbRelay3rJob.address,
-      "CoreFlashArbRelay3r",
+      CoreFlashArbRelay3rOpt.address,
+      "CoreFlashArbRelay3rOpt",
       "",
-      "https://github.com/relay3r-network/relay3r-jobs/blob/main/jobs/coreflasharbrelay3r.js"
+      "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/coreflasharbrelay3r.js"
     );
 
     //Add 5 RLR on Unitrade Job
@@ -104,7 +107,7 @@ module.exports = async function (deployer) {
 
     //Add 10 RLR on CoreFlashArbRelay3rJob Job
     await RelayerTokenD.addRLRCredit(
-      CoreFlashArbRelay3rJob.address,
+      CoreFlashArbRelay3rOptimizedV2Job.address,
       Web3.utils.toWei("15", "ether")
     );
 
@@ -131,8 +134,6 @@ module.exports = async function (deployer) {
   }
 
   else if (TestMigrator){
-    //Deploy governance
-    // await deployer.deploy(Governance,"0xf771733a465441437EcF64FF410e261516c7c5F3");
     //Deploy TokenMigrator
     await deployer.deploy(TokenMigrator);
     const TokenMigratorD = await TokenMigrator.deployed();
@@ -163,7 +164,38 @@ module.exports = async function (deployer) {
 
   }
   else if (DeployLiqMigrator){
-    await deployer.deploy(LiqMigrator);
+    await deployer.deploy(LiqMigratorNew);
+  }
+
+  else if (DeployLegacyHelper){
+    const RelayerTokenD = await Relay3rV2.at("0x5b3F693EfD5710106eb2Eac839368364aCB5a70f");
+    await deployer.deploy(Keep3rV1HelperLegacyV1);
+    const keeperHelperD = await Keep3rV1HelperLegacyV1.deployed();
+    await RelayerTokenD.setKeep3rHelper(keeperHelperD.address);
+
+  }
+
+  else if (DeployNewCoreJob){
+    const RelayerTokenD = await Relay3rV2.at("0x5b3F693EfD5710106eb2Eac839368364aCB5a70f");
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at("0x3eB195B8BC0653E67f0aD14E0111755E01921B7D");
+
+    //Deploy CoreFlashArbRelay3rNew
+    await deployer.deploy(CoreFlashArbRelay3rOpt, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
+    const CoreFlashArbRelay3rOptJob = await CoreFlashArbRelay3rOpt.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(CoreFlashArbRelay3rOptJob.address);
+    //Add 15 RLR on CoreFlashArbRelay3rNew Job
+    await RelayerTokenD.addRLRCredit(
+      CoreFlashArbRelay3rOptJob.address,
+        Web3.utils.toWei("15", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      CoreFlashArbRelay3rOptJob.address,
+      "CoreFlashArbRelay3rOpt",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/coreflasharbrelay3r.js"
+    );
   }
 
 };
