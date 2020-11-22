@@ -18,11 +18,12 @@ pragma solidity 0.6.12;
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+import '@openzeppelin/contracts/access/Ownable.sol';
 
 import "./BondingCurve.sol";
 
 
-contract LinearBondingCurve is BondingCurve {
+contract LinearBondingCurve is BondingCurve,Ownable {
     using SafeMath for uint;
     using SafeERC20 for IERC20;
     uint internal immutable K;
@@ -39,5 +40,9 @@ contract LinearBondingCurve is BondingCurve {
             .div(2).div(K)
             .add(START_PRICE.mul(x1 - x0))
             .div(1e18);
+    }
+
+    function setDevFundAddress(address newAddr) public onlyOwner {
+        relayerDevFund = payable(newAddr);
     }
 }
