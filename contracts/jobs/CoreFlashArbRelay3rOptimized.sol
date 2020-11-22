@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 //Import OpenZepplin libs
 import '@openzeppelin/contracts/access/Ownable.sol';
@@ -10,7 +11,7 @@ import '../interfaces/ICoreFlashArb.sol';
 import '../interfaces/Uniswap/IUniswapV2Pair.sol';
 
 
-contract CoreFlashArbRelay3rOpt is Ownable{
+contract CoreFlashArbRelay3rOptNew is Ownable{
 
     modifier upkeep() {
         require(RLR.isKeeper(msg.sender), "::isKeeper: relayer is not registered");
@@ -68,11 +69,11 @@ contract CoreFlashArbRelay3rOpt is Ownable{
 
     //Return profitable strats array and reward tokens
     function profitableStratsWithTokens() public view returns (uint[] memory,address[] memory){
-        uint profitableCount = profitableCount();
+        uint profitableCountL = profitableCount();
         uint index = 0;
 
-        uint[] memory _profitable = new uint[](profitableCount);
-        address[] memory _rewardToken = new address[](profitableCount);
+        uint[] memory _profitable = new uint[](profitableCountL);
+        address[] memory _rewardToken = new address[](profitableCountL);
 
         for(uint i=0;i<CoreArb.numberOfStrategies();i++){
             if(CoreArb.strategyProfitInReturnToken(i) > 0){
@@ -85,14 +86,33 @@ contract CoreFlashArbRelay3rOpt is Ownable{
         return (_profitable,_rewardToken);
     }
 
-    //Used to execute multiple profitable strategies
+    function hasMostProfitableStrat() public view returns (bool) {
+        (uint256 profit, ) = CoreArb.mostProfitableStrategyInETH();
+        return profit > 0;
+    }
+
+    function getMostProfitableStrat() public view returns (uint){
+        //Get data from interface on profit and strat id
+        (, uint256 strategyID) = CoreArb.mostProfitableStrategyInETH();
+        return strategyID;
+    }
+
+    //Used to execute multiple profitable strategies,only use when there are multiple executable strats
     function workBatch(uint[] memory profitable,address[] memory rewardTokens) public upkeep{
-        require(workable(),"No profitable arb");
+        //No need to check for profitablility here as it wont execute if arb isnt profitable
         for(uint i=0;i<profitable.length;i++){
             CoreArb.executeStrategy(profitable[i]);
             //Send strat reward to executor
             sendERC20(rewardTokens[i],msg.sender);
         }
+    }
+
+    //Execute single profitable strat
+    function work(uint strat,address rewardToken) public upkeep{
+        //No need to check for profitablility here as it wont execute if arb isnt profitable
+        CoreArb.executeStrategy(strat);
+        //Send strat reward to executor
+        sendERC20(rewardToken,msg.sender);
     }
 
     //Added to recover erc20 tokens

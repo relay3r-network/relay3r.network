@@ -16,4 +16,5 @@ interface ICoreFlashArb {
   function numberOfStrategies (  ) external view returns ( uint256 );
   function strategyProfitInReturnToken ( uint256 strategyID ) external view returns ( uint256 profit );
   function strategyInfo(uint256 strategyPID) external view returns (Strategy memory);
+  function mostProfitableStrategyInETH (  ) external view returns ( uint256 profit, uint256 strategyID );
 }
