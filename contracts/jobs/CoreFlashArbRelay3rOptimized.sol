@@ -97,6 +97,12 @@ contract CoreFlashArbRelay3rOptNew is Ownable{
         return strategyID;
     }
 
+    function getMostProfitableStratWithToken() public view returns (uint,address){
+        //Get data from interface on profit and strat id
+        (, uint256 strategyID) = CoreArb.mostProfitableStrategyInETH();
+        return (strategyID,getRewardToken(strategyID));
+    }
+
     //Used to execute multiple profitable strategies,only use when there are multiple executable strats
     function workBatch(uint[] memory profitable,address[] memory rewardTokens) public upkeep{
         //No need to check for profitablility here as it wont execute if arb isnt profitable
