@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma experimental ABIEncoderV2;
 //Import OpenZepplin libs
 import '@openzeppelin/contracts/access/Ownable.sol';

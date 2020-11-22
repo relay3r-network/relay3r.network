@@ -1,9 +1,9 @@
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "./script.sol";
-
-contract REPL is script {
+contract REPL  {
 
     uint private constant FIXED_1 = 0x080000000000000000000000000000000;
     uint private constant FIXED_2 = 0x100000000000000000000000000000000;
@@ -76,9 +76,9 @@ contract REPL is script {
         return uint(1e18) * x / SQRT_1;
     }
 
-	function run() public {
-	    run(this.repl).withCaller(0x9f6FdC2565CfC9ab8E184753bafc8e94C0F985a0);
-	}
+	// function run() public {
+	//     run(this.repl).withCaller(0x9f6FdC2565CfC9ab8E184753bafc8e94C0F985a0);
+	// }
 
     function repl() external {
 
@@ -114,6 +114,6 @@ contract REPL is script {
         uint vol = uint(1e18) * sqrtRV / SQRT_1;
         */
         uint x = vol(points);
-        fmt.printf("x=%u\n",abi.encode(x));
+        // fmt.printf("x=%u\n",abi.encode(x));
     }
 }
