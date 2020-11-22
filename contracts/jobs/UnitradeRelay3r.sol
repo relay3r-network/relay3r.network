@@ -113,14 +113,14 @@ contract UnitradeRelay3r is Ownable{
 
     function getIfExecuteable(uint256 i) public view returns (bool) {
         (
-            uint8 orderType,
-            address maker,
+            ,
+            ,
             address tokenIn,
             address tokenOut,
             uint256 amountInOffered,
             uint256 amountOutExpected,
             uint256 executorFee,
-            uint256 totalEthDeposited,
+            ,
             OrderState orderState,
             bool deflationary
         ) = iUniTrade.getOrder(i);
