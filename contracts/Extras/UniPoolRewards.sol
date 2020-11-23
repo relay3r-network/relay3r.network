@@ -45,7 +45,7 @@ contract LPTokenWrapper {
 
 contract AntUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
     IERC20 public rewardToken = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // WETH
-    uint256 public constant DURATION = 14 days;
+    uint256 public constant DURATION = 30 days;
 
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
@@ -129,6 +129,11 @@ contract AntUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
             rewardToken.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
+    }
+
+    //Call this after transfering reward allocation to contract
+    function initReward() public onlyOwner {
+        rewardRate = rewardToken.balanceOf(address(this)).div(DURATION);
     }
 
     function notifyRewardAmount(uint256 reward)
