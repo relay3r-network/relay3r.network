@@ -36,6 +36,11 @@ contract LPTokenWrapper {
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         uni.safeTransfer(msg.sender, amount);
     }
+
+    function setLPToken(address token) public virtual{
+        uni = IERC20(token);
+    }
+
 }
 
 contract AntUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
@@ -90,14 +95,23 @@ contract AntUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
                 .add(rewards[account]);
     }
 
+    // Admin functions to change the lp token and reward token after deploy
+    function setRewardToken(address token) public onlyOwner {
+        rewardToken = IERC20(token);
+    }
+
+    function setLPToken(address token) public onlyOwner override {
+        super.setLPToken(token);
+    }
+
     // stake visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount) public updateReward(msg.sender) override{
+    function stake(uint256 amount) public updateReward(msg.sender) override {
         require(amount > 0, "Cannot stake 0");
         super.stake(amount);
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public updateReward(msg.sender) override{
+    function withdraw(uint256 amount) public updateReward(msg.sender) override {
         require(amount > 0, "Cannot withdraw 0");
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
