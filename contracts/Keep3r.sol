@@ -1299,7 +1299,6 @@ contract Relay3rV2 is ReentrancyGuard {
         //Removed dokeeperRightChecks and put it here
         require(isKeeper(from));
         require(msg.sender == from || KeeperAllowances[from][msg.sender][bonding]);
-        require(bondings[from][bonding] != 0 && block.timestamp.sub(bondings[from][bonding].add(BOND)) >= 0);
 
         doDataInit(to);
 
