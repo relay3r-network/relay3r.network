@@ -7,12 +7,12 @@ const Relay3rV2 = artifacts.require("Relay3rV2");
 const Keep3rV1JobRegistry = artifacts.require("Keep3rV1JobRegistry");
 // const Governance = artifacts.require("Governance")
 const TokenMigrator = artifacts.require("TokenMigratorCustomizable");
-const MockBurnableToken = artifacts.require("BurnableToken");
-
+const BurnableToken = artifacts.require("BurnableToken");
+const RlrUniRewards = artifacts.require("RlrUniRewards");
 //Jobs
 const UnitradeRelay3r = artifacts.require("UnitradeRelay3r");
 const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
-const CoreFlashArbRelay3rOpt = artifacts.require("CoreFlashArbRelay3rOpt");
+const CoreFlashArbRelay3rOptNew = artifacts.require("CoreFlashArbRelay3rOptNew");
 
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
@@ -27,8 +27,8 @@ const InitialDeployWithMigrator = false;
 const TestMigrator = false;
 const DeployLiqMigrator = false;
 const DeployLegacyHelper =false;
-const DeployNewCoreJob = true;
-
+const DeployNewCoreJob = false;
+const DeployLiqMiner = true;
 module.exports = async function (deployer) {
       // Deploy token with library
   if (InitialDeployWithMigrator) {
@@ -63,10 +63,10 @@ module.exports = async function (deployer) {
     await RelayerTokenD.addJob(UnitradeJob.address);
 
     //Deploy CoreFlashArbRelay3r
-    await deployer.deploy(CoreFlashArbRelay3rOpt, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
-    const CoreFlashArbRelay3rOpt = await CoreFlashArbRelay3rOpt.deployed();
+    await deployer.deploy(CoreFlashArbRelay3rOptNew, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
+    const CoreFlashArbRelay3rOptNew = await CoreFlashArbRelay3rOptNew.deployed();
     //Add to jobs on keeper token
-    await RelayerTokenD.addJob(CoreFlashArbRelay3rOpt.address);
+    await RelayerTokenD.addJob(CoreFlashArbRelay3rOptNew.address);
 
     //Deploy keeper job registry
     await deployer.deploy(Keep3rV1JobRegistry);
@@ -88,8 +88,8 @@ module.exports = async function (deployer) {
     );
 
     await KeeperJobRegistryD.add(
-      CoreFlashArbRelay3rOpt.address,
-      "CoreFlashArbRelay3rOpt",
+      CoreFlashArbRelay3rOptNew.address,
+      "CoreFlashArbRelay3rOptNew",
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/coreflasharbrelay3r.js"
     );
@@ -107,7 +107,7 @@ module.exports = async function (deployer) {
 
     //Add 10 RLR on CoreFlashArbRelay3rJob Job
     await RelayerTokenD.addRLRCredit(
-      CoreFlashArbRelay3rOptimizedV2Job.address,
+      CoreFlashArbRelay3rOptNewimizedV2Job.address,
       Web3.utils.toWei("15", "ether")
     );
 
@@ -139,10 +139,10 @@ module.exports = async function (deployer) {
     const TokenMigratorD = await TokenMigrator.deployed();
 
     ///Now deploy test token 1
-    await deployer.deploy(MockBurnableToken,"TestToken1","TXS");
-    const Token1 = await MockBurnableToken.deployed();
-    await deployer.deploy(MockBurnableToken,"TestToken2","TXSS");
-    const Token2 = await MockBurnableToken.deployed();
+    await deployer.deploy(BurnableToken,"TestToken1","TXS");
+    const Token1 = await BurnableToken.deployed();
+    await deployer.deploy(BurnableToken,"TestToken2","TXSS");
+    const Token2 = await BurnableToken.deployed();
 
     await TokenMigratorD.SetOriginToken(Token1.address);
     await TokenMigratorD.SetSwapToken(Token2.address);
@@ -180,22 +180,39 @@ module.exports = async function (deployer) {
     const KeeperJobRegistryD = await Keep3rV1JobRegistry.at("0x3eB195B8BC0653E67f0aD14E0111755E01921B7D");
 
     //Deploy CoreFlashArbRelay3rNew
-    await deployer.deploy(CoreFlashArbRelay3rOpt, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
-    const CoreFlashArbRelay3rOptJob = await CoreFlashArbRelay3rOpt.deployed();
+    await deployer.deploy(CoreFlashArbRelay3rOptNew, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
+    const CoreFlashArbRelay3rOptNewJob = await CoreFlashArbRelay3rOptNew.deployed();
+    //Remove old job
+    await RelayerTokenD.removeJob("0x7905AAE5E92D9Ff324d0b2Ae5220e2Bb0078553a");
     //Add to jobs on keeper token
-    await RelayerTokenD.addJob(CoreFlashArbRelay3rOptJob.address);
-    //Add 15 RLR on CoreFlashArbRelay3rNew Job
+    await RelayerTokenD.addJob(CoreFlashArbRelay3rOptNewJob.address);
+    //Add 1 RLR on CoreFlashArbRelay3rNew Job
     await RelayerTokenD.addRLRCredit(
-      CoreFlashArbRelay3rOptJob.address,
-        Web3.utils.toWei("15", "ether")
+      CoreFlashArbRelay3rOptNewJob.address,
+        Web3.utils.toWei("1", "ether")
     );
     //Add to registry
     await KeeperJobRegistryD.add(
-      CoreFlashArbRelay3rOptJob.address,
-      "CoreFlashArbRelay3rOpt",
+      CoreFlashArbRelay3rOptNewJob.address,
+      "CoreFlashArbRelay3rOptNew",
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/coreflasharbrelay3r.js"
     );
+  }
+  else if (DeployLiqMiner){
+    await deployer.deploy(RlrUniRewards);
+    const RlrUniMine = await RlrUniRewards.deployed();
+    //deploy token to add liq to
+    await deployer.deploy(BurnableToken,"RelayerTestNew","RLRX");
+    const Token1 = await BurnableToken.deployed();
+    //Set reward token
+    await RlrUniMine.setRewardToken(Token1.address);
+    //Mint 89k tokens to transfer to rewards
+    await Token1.mint(Web3.utils.toWei("89000", "ether"));
+    //Now transfer 89k tokens of token1 to reward pool
+    await Token1.transfer(RlrUniMine.address,Web3.utils.toWei("89000", "ether"));
+    //Init slow rewardrate
+    await RlrUniMine.initRewardSlow();
   }
 
 };

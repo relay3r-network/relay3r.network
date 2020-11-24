@@ -12,7 +12,7 @@ contract LPTokenWrapper {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public uni = IERC20(0x9dEF9511fEc79f83AFCBFfe4776B1D817DC775aE); // ANT/ETH LP
+    IERC20 public uni = IERC20(0xe4332d93B4f0477d5230852f59D2621E2AcdEa1A); // RLR/ETH LP
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
@@ -43,8 +43,8 @@ contract LPTokenWrapper {
 
 }
 
-contract AntUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
-    IERC20 public rewardToken = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // WETH
+contract RlrUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
+    IERC20 public rewardToken = IERC20(0x5b3F693EfD5710106eb2Eac839368364aCB5a70f); // RLR
     uint256 public constant DURATION = 30 days;
 
     uint256 public periodFinish = 0;
@@ -133,7 +133,12 @@ contract AntUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
 
     //Call this after transfering reward allocation to contract
     function initReward() public onlyOwner {
-        rewardRate = rewardToken.balanceOf(address(this)).div(DURATION);
+        _notifyRewardAmount(rewardToken.balanceOf(address(this)));
+    }
+
+    function initRewardSlow() public onlyOwner {
+        //Only allocate 10% of total allocation intially to avoid instamining
+        _notifyRewardAmount(rewardToken.balanceOf(address(this)).div(10));
     }
 
     function notifyRewardAmount(uint256 reward)
@@ -142,6 +147,10 @@ contract AntUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
         updateReward(address(0))
         override
     {
+        _notifyRewardAmount(reward);
+    }
+
+    function _notifyRewardAmount(uint256 reward) internal {
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(DURATION);
         } else {
