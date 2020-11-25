@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 import './LPTokenWrapper.sol';
 import './IRewardDistributionRecipient.sol';
-contract RlrUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
+contract RlrMooniRewards is LPTokenWrapper, IRewardDistributionRecipient {
     IERC20 public rewardToken = IERC20(0x5b3F693EfD5710106eb2Eac839368364aCB5a70f); // RLR
     uint256 public constant DURATION = 30 days;
 
@@ -23,8 +23,7 @@ contract RlrUniRewards is LPTokenWrapper, IRewardDistributionRecipient {
     event RewardPaid(address indexed user, uint256 reward);
 
     constructor() public {
-        //Set lp token for uniswap
-        setLPToken(0xe4332d93B4f0477d5230852f59D2621E2AcdEa1A);
+        setLPToken(0xF83f2C42d7b38394F67368c859756F10761beF42);// RLR/ETH Mooniswap LP
     }
 
     modifier updateReward(address account) {
