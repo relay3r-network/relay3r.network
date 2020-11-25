@@ -97,11 +97,11 @@ contract LPRewardsWrapper is LPTokenWrapper, IRewardDistributionRecipient {
     }
 
     //Call this after transfering reward allocation to contract
-    function initReward() public onlyOwner {
+    function initReward() public onlyOwner updateReward(address(0)) {
         _notifyRewardAmount(rewardToken.balanceOf(address(this)));
     }
 
-    function initRewardSlow() public onlyOwner {
+    function initRewardSlow() public onlyOwner updateReward(address(0)) {
         //Only allocate 10% of total allocation intially to avoid instamining
         _notifyRewardAmount(rewardToken.balanceOf(address(this)).div(10));
     }
