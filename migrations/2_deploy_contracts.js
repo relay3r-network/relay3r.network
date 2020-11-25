@@ -5,10 +5,17 @@ const Keep3rV1HelperLegacyV1 = artifacts.require("Keep3rV1HelperLegacyV1");
 const Keep3rV1Library = artifacts.require("Keep3rV1Library");
 const Relay3rV2 = artifacts.require("Relay3rV2");
 const Keep3rV1JobRegistry = artifacts.require("Keep3rV1JobRegistry");
+//Extra contracts
 // const Governance = artifacts.require("Governance")
+//Migration contracts
 const TokenMigrator = artifacts.require("TokenMigratorCustomizable");
+const LiqMigratorNew = artifacts.require("LiqMigratorNew");
+//Mock testing token contract
 const BurnableToken = artifacts.require("BurnableToken");
+//Liquidty rewards
 const RlrUniRewards = artifacts.require("RlrUniRewards");
+const RlrMooniRewards = artifacts.require("RlrMooniRewards");
+
 //Jobs
 const UnitradeRelay3r = artifacts.require("UnitradeRelay3r");
 const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
@@ -20,7 +27,6 @@ const CoreFlashArbRelay3rOptNew = artifacts.require("CoreFlashArbRelay3rOptNew")
 
 const Addrs = require("../constants/constants").Addrs;
 
-const LiqMigratorNew = artifacts.require("LiqMigratorNew");
 
 /* Various deploy stages */
 const InitialDeployWithMigrator = false;
@@ -29,6 +35,7 @@ const DeployLiqMigrator = false;
 const DeployLegacyHelper =false;
 const DeployNewCoreJob = false;
 const DeployLiqMiner = true;
+const testLiqMinerPhase = false;
 module.exports = async function (deployer) {
       // Deploy token with library
   if (InitialDeployWithMigrator) {
@@ -168,7 +175,7 @@ module.exports = async function (deployer) {
   }
 
   else if (DeployLegacyHelper){
-    const RelayerTokenD = await Relay3rV2.at("0x5b3F693EfD5710106eb2Eac839368364aCB5a70f");
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
     await deployer.deploy(Keep3rV1HelperLegacyV1);
     const keeperHelperD = await Keep3rV1HelperLegacyV1.deployed();
     await RelayerTokenD.setKeep3rHelper(keeperHelperD.address);
@@ -176,8 +183,8 @@ module.exports = async function (deployer) {
   }
 
   else if (DeployNewCoreJob){
-    const RelayerTokenD = await Relay3rV2.at("0x5b3F693EfD5710106eb2Eac839368364aCB5a70f");
-    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at("0x3eB195B8BC0653E67f0aD14E0111755E01921B7D");
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(Addrs.Keep3rV1JobRegistry[1]);
 
     //Deploy CoreFlashArbRelay3rNew
     await deployer.deploy(CoreFlashArbRelay3rOptNew, RelayerTokenD.address,Addrs.CoreFlashArb[1],Addrs.CoreToken[1]);
@@ -200,19 +207,38 @@ module.exports = async function (deployer) {
     );
   }
   else if (DeployLiqMiner){
+    //Init RLR Interface
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    //Deploy uniswap reward contract
     await deployer.deploy(RlrUniRewards);
     const RlrUniMine = await RlrUniRewards.deployed();
-    //deploy token to add liq to
-    await deployer.deploy(BurnableToken,"RelayerTestNew","RLRX");
-    const Token1 = await BurnableToken.deployed();
-    //Set reward token
-    await RlrUniMine.setRewardToken(Token1.address);
-    //Mint 89k tokens to transfer to rewards
-    await Token1.mint(Web3.utils.toWei("89000", "ether"));
-    //Now transfer 89k tokens of token1 to reward pool
-    await Token1.transfer(RlrUniMine.address,Web3.utils.toWei("89000", "ether"));
-    //Init slow rewardrate
-    await RlrUniMine.initRewardSlow();
+    //Deploy mooniswap reward contract
+    await deployer.deploy(RlrMooniRewards);
+    const RlrMooniMine = await RlrMooniRewards.deployed();
+
+    if(testLiqMinerPhase) {
+      //deploy token to add liq to
+      await deployer.deploy(BurnableToken,"RelayerTestNew","RLRX");
+      const Token1 = await BurnableToken.deployed();
+      //Set reward token
+      await RlrUniMine.setRewardToken(Token1.address);
+      //Mint 89k tokens to transfer to rewards
+      await Token1.mint(Web3.utils.toWei("89000", "ether"));
+      //Now transfer 89k tokens of token1 to reward pool
+      await Token1.transfer(RlrUniMine.address,Web3.utils.toWei("89000", "ether"));
+      //Init slow rewardrate
+      await RlrUniMine.initRewardSlow();
+    }
+    else {
+      //Follow mainnet procedure
+      //Send 4450 RLR to UniPool Rewards
+      RelayerTokenD.transfer(RlrUniMine.address,Web3.utils.toWei("4450", "ether"));
+      //Send 4450 RLR to MooniPool Rewards
+      RelayerTokenD.transfer(RlrUniMine.RlrMooniMine,Web3.utils.toWei("4450", "ether"));
+      //Init slow rewards on both pools
+      await RlrUniMine.initRewardSlow();
+      await RlrMooniMine.initRewardSlow();
+    }
   }
 
 };

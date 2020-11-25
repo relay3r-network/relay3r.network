@@ -1,16 +1,19 @@
 const Addrs = {
+  RLRToken: {
+    1: "0x5b3F693EfD5710106eb2Eac839368364aCB5a70f"
+  },
   RL3RToken: {
     1: "0xf771733a465441437EcF64FF410e261516c7c5F3",
     3:"0x6e08F9A1C2776E140DCB467fE9a48c354Cd4dD0e"
+  },
+  Keep3rV1JobRegistry: {
+    1:"0x3eB195B8BC0653E67f0aD14E0111755E01921B7D"
   },
   CoreFlashArb:{
     1: "0x220564C9Bd38aa1240c3507007970d9e30c0657D"
   },
   CoreToken: {
     1: "0x62359Ed7505Efc61FF1D56fEF82158CcaffA23D7"
-  },
-  RLRToken: {
-    1: "0x5b3F693EfD5710106eb2Eac839368364aCB5a70f"
   },
   WETH: {
     1: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
