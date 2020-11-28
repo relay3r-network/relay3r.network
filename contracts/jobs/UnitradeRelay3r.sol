@@ -89,27 +89,71 @@ interface UnitradeInterface {
     function updateStaker(address newStaker) external;
 }
 
-contract UnitradeRelay3r is Ownable{
+contract UnitradeExecutorRLRv3 is Ownable{
+
     UnitradeInterface iUniTrade = UnitradeInterface(
         0xC1bF1B4929DA9303773eCEa5E251fDEc22cC6828
     );
+
     //change this to relay3r on deploy
-    IKeep3rV1Mini public KP3R;
+    IKeep3rV1Mini public RLR;
+
     bool TryDeflationaryOrders = false;
+    bool public payoutETH = true;
+    bool public payoutRLR = true;
+
+    mapping(address => bool) public tokenOutSkip;
+
 
     constructor(address keepertoken) public {
-        KP3R = IKeep3rV1Mini(keepertoken);
+        RLR = IKeep3rV1Mini(keepertoken);
+        //Add hype token to tokenoutskip
+        addSkipTokenOut(0x610c67be018A5C5bdC70ACd8DC19688A11421073);
     }
 
     modifier upkeep() {
-        require(KP3R.isKeeper(msg.sender), "::isKeeper: keeper is not registered");
+        require(RLR.isKeeper(msg.sender), "::isKeeper: relayer is not registered");
         _;
-        KP3R.workedETH(msg.sender);
+        if(payoutRLR) {
+            //Payout RLR
+            RLR.worked(msg.sender);
+        }
+    }
+
+    function togglePayETH() public onlyOwner {
+        payoutETH = !payoutETH;
+    }
+
+    function togglePayRLR() public onlyOwner {
+        payoutRLR = !payoutRLR;
+    }
+
+    function addSkipTokenOut(address token) public onlyOwner {
+        tokenOutSkip[token] = true;
+    }
+
+    //Use this to depricate this job to move rlr to another job later
+    function destructJob() public onlyOwner {
+     //Get the credits for this job first
+     uint256 currRLRCreds = RLR.credits(address(this),address(RLR));
+     uint256 currETHCreds = RLR.credits(address(this),RLR.ETH());
+     //Send out RLR Credits if any
+     if(currRLRCreds > 0) {
+        //Invoke receipt to send all the credits of job to owner
+        RLR.receipt(address(RLR),owner(),currRLRCreds);
+     }
+     //Send out ETH credits if any
+     if (currETHCreds > 0) {
+        RLR.receiptETH(owner(),currETHCreds);
+     }
+     //Finally self destruct the contract after sending the credits
+     selfdestruct(payable(owner()));
     }
 
     function setTryBurnabletokens(bool fTry) public onlyOwner{
         TryDeflationaryOrders = fTry;
     }
+
 
     function getIfExecuteable(uint256 i) public view returns (bool) {
         (
@@ -129,6 +173,7 @@ contract UnitradeRelay3r is Ownable{
         path[1] = tokenOut;
         if(executorFee <= 0) return false;//Dont execute unprofitable orders
         if(deflationary && !TryDeflationaryOrders) return false;//Skip deflationary token orders as it is not supported atm
+        if(tokenOutSkip[tokenOut]) return false;//Skip tokens that are set in mapping
         uint256[] memory amounts = UniswapV2Library.getAmountsOut(
             iUniTrade.uniswapV2Factory(),
             amountInOffered,
@@ -143,17 +188,47 @@ contract UnitradeRelay3r is Ownable{
     }
 
     function hasExecutableOrdersPending() public view returns (bool) {
-        for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength(); i++) {
-            if (getIfExecuteable(i)) {
+        for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength() - 1; i++) {
+            if (getIfExecuteable(iUniTrade.getActiveOrderId(i))) {
                 return true;
             }
         }
         return false;
     }
 
-    receive() external payable {
-        //Add any eth received
-        KP3R.addCreditETH{value:msg.value}(address(this));
+    //Get count of executable orders
+    function getExectuableOrdersCount() public view returns (uint count){
+        for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength() - 1; i++) {
+            if (getIfExecuteable(iUniTrade.getActiveOrderId(i))) {
+                count++;
+            }
+        }
+    }
+
+    function getExecutableOrdersList() public view returns (uint[] memory) {
+        uint[] memory orderArr = new uint[](getExectuableOrdersCount());
+        uint index = 0;
+        for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength() - 1; i++) {
+            if (getIfExecuteable(iUniTrade.getActiveOrderId(i))) {
+                orderArr[index] = iUniTrade.getActiveOrderId(i);
+                index++;
+            }
+        }
+        return orderArr;
+    }
+
+    receive() external payable {}
+
+    function sendETHRewards() internal {
+        if(!payoutETH) {
+            //Transfer received eth to treasury
+            (bool success,  ) = payable(owner()).call{value : address(this).balance}("");
+            require(success,"!treasurysend");
+        }
+        else {
+            (bool success,  ) = payable(msg.sender).call{value : address(this).balance}("");
+            require(success,"!sendETHRewards");
+        }
     }
 
     function workable() public view returns (bool) {
@@ -161,11 +236,21 @@ contract UnitradeRelay3r is Ownable{
     }
 
     function work() public upkeep{
-        require(workable(),"No executable trades");
-        for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength(); i++) {
-            if (getIfExecuteable(i)) {
+        for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength() - 1; i++) {
+            if (getIfExecuteable(iUniTrade.getActiveOrderId(i))) {
                 iUniTrade.executeOrder(i);
             }
         }
+        //After order executions send all the eth to relayer
+        sendETHRewards();
+    }
+
+    //Use this to save on gas
+    function workBatch(uint[] memory orderList) public upkeep {
+        for (uint256 i = 0; i < orderList.length; i++) {
+            iUniTrade.executeOrder(orderList[i]);
+        }
+        //After order executions send all the eth to relayer
+        sendETHRewards();
     }
 }
