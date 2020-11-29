@@ -19,9 +19,8 @@ const RlrMooniRewards = artifacts.require("RlrMooniRewards");
 //Jobs
 const UnitradeExecutorRLRv4 = artifacts.require("UnitradeExecutorRLRv4");
 const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
-const CoreFlashArbRelay3rOptNew = artifacts.require(
-  "CoreFlashArbRelay3rOptNew"
-);
+const CoreFlashArbRelay3rOptNew = artifacts.require("CoreFlashArbRelay3rOptNew");
+const GetBackETHRelayer = artifacts.require("GetBackETHRelayer");
 
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
@@ -35,8 +34,10 @@ const TestMigrator = false;
 const DeployLiqMigrator = false;
 const DeployLegacyHelper = false;
 const DeployNewCoreJob = false;
-const DeployNewUnitradeJob = true;
+const DeployNewUnitradeJob = false;
+const DeployGBETHJob = true;
 const DeployLiqMiner = false;
+
 const testLiqMinerPhase = false;
 
 module.exports = async function (deployer) {
@@ -271,6 +272,35 @@ module.exports = async function (deployer) {
       await RlrUniMine.initRewardSlow();
       // //Init normal reward rate
       // await RlrUniMine.initReward();
+    }
+    else if (DeployGBETHJob) {
+      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+      const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+        Addrs.Keep3rV1JobRegistry[1]
+      );
+
+      //Deploy GetBackETHRelayer
+      await deployer.deploy(
+        GetBackETHRelayer,
+        RelayerTokenD.address,
+        Addrs.GetBackETHHelperV2[1]
+      );
+
+      const GetBackETHRelayerJob = await GetBackETHRelayer.deployed();
+      //Add to jobs on keeper token
+      await RelayerTokenD.addJob(GetBackETHRelayerJob.address);
+      //Add 1 RLR on UnitradeExecutorRLRv4 Job
+      await RelayerTokenD.addRLRCredit(
+        GetBackETHRelayerJob.address,
+        Web3.utils.toWei("50", "ether")
+      );
+      //Add to registry
+      await KeeperJobRegistryD.add(
+        GetBackETHRelayerJob.address,
+        "GetBackETHRelayer",
+        "",
+        "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/GetBackETHRelayerJob.js"
+      );
     }
     else if (DeployNewUnitradeJob) {
       const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
