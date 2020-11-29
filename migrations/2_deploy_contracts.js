@@ -17,7 +17,7 @@ const RlrUniRewards = artifacts.require("RlrUniRewards");
 const RlrMooniRewards = artifacts.require("RlrMooniRewards");
 
 //Jobs
-const UnitradeExecutorRLRv3 = artifacts.require("UnitradeExecutorRLRv3");
+const UnitradeExecutorRLRv4 = artifacts.require("UnitradeExecutorRLRv4");
 const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
 const CoreFlashArbRelay3rOptNew = artifacts.require(
   "CoreFlashArbRelay3rOptNew"
@@ -67,8 +67,8 @@ module.exports = async function (deployer) {
     await RelayerTokenD.addJob(UniswapV2SlidingOracleJob.address);
 
     //Deploy UnitradeJob
-    await deployer.deploy(UnitradeExecutorRLRv3, RelayerTokenD.address);
-    const UnitradeJob = await UnitradeExecutorRLRv3.deployed();
+    await deployer.deploy(UnitradeExecutorRLRv4, RelayerTokenD.address);
+    const UnitradeJob = await UnitradeExecutorRLRv4.deployed();
     //Add to jobs on keeper token
     await RelayerTokenD.addJob(UnitradeJob.address);
 
@@ -97,7 +97,7 @@ module.exports = async function (deployer) {
 
     await KeeperJobRegistryD.add(
       UnitradeJob.address,
-      "UnitradeExecutorRLRv3",
+      "UnitradeExecutorRLRv4",
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/unitraderelay3r.js"
     );
@@ -278,26 +278,26 @@ module.exports = async function (deployer) {
         Addrs.Keep3rV1JobRegistry[1]
       );
 
-      await RelayerTokenD.removeJob("0xf727e89797Fd7be7dFaa791E9a14C112FDF3e1e2");
+      await RelayerTokenD.removeJob("0x34bcA098B78E2291E6b8E321Cc9bfB9F451713A3");
 
-      //Deploy UnitradeExecutorRLRv3
+      //Deploy UnitradeExecutorRLRv4
       await deployer.deploy(
-        UnitradeExecutorRLRv3,
+        UnitradeExecutorRLRv4,
         RelayerTokenD.address
       );
 
-      const UnitradeExecutorRLRv3Job = await UnitradeExecutorRLRv3.deployed();
+      const UnitradeExecutorRLRv4Job = await UnitradeExecutorRLRv4.deployed();
       //Add to jobs on keeper token
-      await RelayerTokenD.addJob(UnitradeExecutorRLRv3Job.address);
-      //Add 1 RLR on UnitradeExecutorRLRv3 Job
-      await RelayerTokenD.addRLRCredit(
-        UnitradeExecutorRLRv3Job.address,
-        Web3.utils.toWei("150", "ether")
-      );
+      await RelayerTokenD.addJob(UnitradeExecutorRLRv4Job.address);
+      // //Add 1 RLR on UnitradeExecutorRLRv4 Job
+      // await RelayerTokenD.addRLRCredit(
+      //   UnitradeExecutorRLRv4Job.address,
+      //   Web3.utils.toWei("150", "ether")
+      // );
       //Add to registry
       await KeeperJobRegistryD.add(
-        UnitradeExecutorRLRv3Job.address,
-        "UnitradeExecutorRLRv3",
+        UnitradeExecutorRLRv4Job.address,
+        "UnitradeExecutorRLRv4",
         "",
         "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/UnitradeRelayerJob.js"
       );

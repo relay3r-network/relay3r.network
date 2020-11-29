@@ -89,7 +89,7 @@ interface UnitradeInterface {
     function updateStaker(address newStaker) external;
 }
 
-contract UnitradeExecutorRLRv3 is Ownable{
+contract UnitradeExecutorRLRv4 is Ownable{
 
     UnitradeInterface iUniTrade = UnitradeInterface(
         0xC1bF1B4929DA9303773eCEa5E251fDEc22cC6828
@@ -97,6 +97,7 @@ contract UnitradeExecutorRLRv3 is Ownable{
 
     //change this to relay3r on deploy
     IKeep3rV1Mini public RLR;
+    uint public minKeep = 100e18;
 
     bool TryDeflationaryOrders = false;
     bool public payoutETH = true;
@@ -112,7 +113,7 @@ contract UnitradeExecutorRLRv3 is Ownable{
     }
 
     modifier upkeep() {
-        require(RLR.isKeeper(msg.sender), "::isKeeper: relayer is not registered");
+        require(RLR.isMinKeeper(msg.sender, minKeep, 0, 0), "::isKeeper: relayer is not registered");
         _;
         if(payoutRLR) {
             //Payout RLR
@@ -130,6 +131,10 @@ contract UnitradeExecutorRLRv3 is Ownable{
 
     function addSkipTokenOut(address token) public onlyOwner {
         tokenOutSkip[token] = true;
+    }
+
+    function setMinKeep(uint _keep) public onlyOwner {
+        minKeep = _keep;
     }
 
     //Use this to depricate this job to move rlr to another job later
@@ -236,6 +241,7 @@ contract UnitradeExecutorRLRv3 is Ownable{
     }
 
     function work() public upkeep{
+        require(workable(),"!workable");
         for (uint256 i = 0; i < iUniTrade.getActiveOrdersLength() - 1; i++) {
             if (getIfExecuteable(iUniTrade.getActiveOrderId(i))) {
                 iUniTrade.executeOrder(i);
@@ -247,6 +253,7 @@ contract UnitradeExecutorRLRv3 is Ownable{
 
     //Use this to save on gas
     function workBatch(uint[] memory orderList) public upkeep {
+        require(workable(),"!workable");
         for (uint256 i = 0; i < orderList.length; i++) {
             iUniTrade.executeOrder(orderList[i]);
         }
