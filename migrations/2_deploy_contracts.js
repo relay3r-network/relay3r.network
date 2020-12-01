@@ -21,6 +21,7 @@ const UnitradeExecutorRLRv4 = artifacts.require("UnitradeExecutorRLRv4");
 const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
 const CoreFlashArbRelay3rOptNew = artifacts.require("CoreFlashArbRelay3rOptNew");
 const GetBackETHRelayer = artifacts.require("GetBackETHRelayer");
+const BCAFarmerRelayer = artifacts.require("BCAFarmerRelayerv2");
 
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
@@ -35,7 +36,8 @@ const DeployLiqMigrator = false;
 const DeployLegacyHelper = false;
 const DeployNewCoreJob = false;
 const DeployNewUnitradeJob = false;
-const DeployGBETHJob = true;
+const DeployGBETHJob = false;
+const DeployBCAFarmerJob = true;
 const DeployLiqMiner = false;
 
 const testLiqMinerPhase = false;
@@ -272,6 +274,34 @@ module.exports = async function (deployer) {
       await RlrUniMine.initRewardSlow();
       // //Init normal reward rate
       // await RlrUniMine.initReward();
+    }
+    else if (DeployBCAFarmerJob) {
+      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+      const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+        Addrs.Keep3rV1JobRegistry[1]
+      );
+      //Deploy BCAFarmerRelayer
+      await deployer.deploy(
+        BCAFarmerRelayer,
+        RelayerTokenD.address,
+        Addrs.BCAFarmer[1]
+      );
+
+      const BCAFarmerRelayerJob = await BCAFarmerRelayer.deployed();
+      //Add to jobs on keeper token
+      await RelayerTokenD.addJob(BCAFarmerRelayerJob.address);
+      //Add 50 RLR on BCAFarmerRelayer Job
+      await RelayerTokenD.addRLRCredit(
+        BCAFarmerRelayerJob.address,
+        Web3.utils.toWei("50", "ether")
+      );
+      //Add to registry
+      await KeeperJobRegistryD.add(
+        BCAFarmerRelayerJob.address,
+        "BCAFarmerRelayerv2",
+        "",
+        "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/BCAFarmerRelayerJob.js"
+      );
     }
     else if (DeployGBETHJob) {
       const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
