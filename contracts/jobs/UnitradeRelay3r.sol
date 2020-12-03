@@ -6,8 +6,7 @@ import "../libraries/UniswapV2Library.sol";
 import "../interfaces/IUnitradeOrderbook.sol";
 import "../interfaces/IChi.sol";
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
-
-contract UnitradeExecutorRLRV5 is Ownable{
+contract UnitradeExecutorRLRV6 is Ownable{
 
     UnitradeInterface iUniTrade = UnitradeInterface(
         0xC1bF1B4929DA9303773eCEa5E251fDEc22cC6828
@@ -30,6 +29,7 @@ contract UnitradeExecutorRLRV5 is Ownable{
         RLR = IKeep3rV1Mini(keepertoken);
         //Add hype token to tokenoutskip
         addSkipTokenOut(0x610c67be018A5C5bdC70ACd8DC19688A11421073);
+        require(CHI.approve(address(this), uint256(-1)));
     }
 
     //Custom upkeep modifer with CHI support
@@ -63,20 +63,20 @@ contract UnitradeExecutorRLRV5 is Ownable{
 
     //Use this to depricate this job to move rlr to another job later
     function destructJob() public onlyOwner {
-     //Get the credits for this job first
-     uint256 currRLRCreds = RLR.credits(address(this),address(RLR));
-     uint256 currETHCreds = RLR.credits(address(this),RLR.ETH());
-     //Send out RLR Credits if any
-     if(currRLRCreds > 0) {
-        //Invoke receipt to send all the credits of job to owner
-        RLR.receipt(address(RLR),owner(),currRLRCreds);
-     }
-     //Send out ETH credits if any
-     if (currETHCreds > 0) {
-        RLR.receiptETH(owner(),currETHCreds);
-     }
-     //Finally self destruct the contract after sending the credits
-     selfdestruct(payable(owner()));
+        //Get the credits for this job first
+        uint256 currRLRCreds = RLR.credits(address(this),address(RLR));
+        uint256 currETHCreds = RLR.credits(address(this),RLR.ETH());
+        //Send out RLR Credits if any
+        if(currRLRCreds > 0) {
+            //Invoke receipt to send all the credits of job to owner
+            RLR.receipt(address(RLR),owner(),currRLRCreds);
+        }
+        //Send out ETH credits if any
+        if (currETHCreds > 0) {
+            RLR.receiptETH(owner(),currETHCreds);
+        }
+        //Finally self destruct the contract after sending the credits
+        selfdestruct(payable(owner()));
     }
 
     function setTryBurnabletokens(bool fTry) public onlyOwner{
@@ -167,7 +167,6 @@ contract UnitradeExecutorRLRV5 is Ownable{
 
     //Use this to save on gas
     function workBatch(uint[] memory orderList) public upkeep {
-        require(workable(),"!workable");
         for (uint256 i = 0; i < orderList.length; i++) {
             iUniTrade.executeOrder(orderList[i]);
         }
@@ -176,10 +175,21 @@ contract UnitradeExecutorRLRV5 is Ownable{
     }
 
     function workSolo(uint order) public upkeep {
-        require(workable(),"!workable");
         iUniTrade.executeOrder(order);
         //After order executions send all the eth to relayer
         sendETHRewards();
     }
 
+    function recoverERC20(address token) public onlyOwner {
+        sendERC20(token,owner());
+    }
+
+    //Helper functions for handling sending of reward token
+    function getTokenBalance(address tokenAddress) public view returns (uint256) {
+        return IERC20(tokenAddress).balanceOf(address(this));
+    }
+
+    function sendERC20(address tokenAddress,address receiver) internal {
+        IERC20(tokenAddress).transfer(receiver, getTokenBalance(tokenAddress));
+    }
 }

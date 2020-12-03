@@ -17,9 +17,9 @@ const RlrUniRewards = artifacts.require("RlrUniRewards");
 const RlrMooniRewards = artifacts.require("RlrMooniRewards");
 
 //Jobs
-const UnitradeExecutorRLRV5 = artifacts.require("UnitradeExecutorRLRV5");
+const UnitradeExecutorRLRV6 = artifacts.require("UnitradeExecutorRLRV6");
 const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
-const CoreFlashArbRelayerV2 = artifacts.require("CoreFlashArbRelayerV2");
+const CoreFlashArbRelayerV3 = artifacts.require("CoreFlashArbRelayerV3");
 const GetBackETHRelayer = artifacts.require("GetBackETHRelayer");
 const BACFarmerRelayer = artifacts.require("BACFarmerRelayerv3");
 
@@ -71,21 +71,21 @@ module.exports = async function (deployer) {
     await RelayerTokenD.addJob(UniswapV2SlidingOracleJob.address);
 
     //Deploy UnitradeJob
-    await deployer.deploy(UnitradeExecutorRLRV5, RelayerTokenD.address);
-    const UnitradeJob = await UnitradeExecutorRLRV5.deployed();
+    await deployer.deploy(UnitradeExecutorRLRV6, RelayerTokenD.address);
+    const UnitradeJob = await UnitradeExecutorRLRV6.deployed();
     //Add to jobs on keeper token
     await RelayerTokenD.addJob(UnitradeJob.address);
 
     //Deploy CoreFlashArbRelay3r
     await deployer.deploy(
-      CoreFlashArbRelayerV2,
+      CoreFlashArbRelayerV3,
       RelayerTokenD.address,
       Addrs.CoreFlashArb[1],
       Addrs.CoreToken[1]
     );
-    const CoreFlashArbRelayerV2 = await CoreFlashArbRelayerV2.deployed();
+    const CoreFlashArbRelayerV3 = await CoreFlashArbRelayerV3.deployed();
     //Add to jobs on keeper token
-    await RelayerTokenD.addJob(CoreFlashArbRelayerV2.address);
+    await RelayerTokenD.addJob(CoreFlashArbRelayerV3.address);
 
     //Deploy keeper job registry
     await deployer.deploy(Keep3rV1JobRegistry);
@@ -101,14 +101,14 @@ module.exports = async function (deployer) {
 
     await KeeperJobRegistryD.add(
       UnitradeJob.address,
-      "UnitradeExecutorRLRV5",
+      "UnitradeExecutorRLRV6",
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/unitraderelay3r.js"
     );
 
     await KeeperJobRegistryD.add(
-      CoreFlashArbRelayerV2.address,
-      "CoreFlashArbRelayerV2",
+      CoreFlashArbRelayerV3.address,
+      "CoreFlashArbRelayerV3",
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/coreflasharbrelay3r.js"
     );
@@ -126,7 +126,7 @@ module.exports = async function (deployer) {
 
     //Add 10 RLR on CoreFlashArbRelay3rJob Job
     await RelayerTokenD.addRLRCredit(
-      CoreFlashArbRelayerV2imizedV2Job.address,
+      CoreFlashArbRelayerV3imizedV2Job.address,
       Web3.utils.toWei("15", "ether")
     );
 
@@ -204,25 +204,25 @@ module.exports = async function (deployer) {
 
     //Deploy CoreFlashArbRelay3rNew
     await deployer.deploy(
-      CoreFlashArbRelayerV2,
+      CoreFlashArbRelayerV3,
       RelayerTokenD.address,
       Addrs.CoreFlashArb[1],
       Addrs.CoreToken[1]
     );
-    const CoreFlashArbRelayerV2Job = await CoreFlashArbRelayerV2.deployed();
+    const CoreFlashArbRelayerV3Job = await CoreFlashArbRelayerV3.deployed();
     //Remove old job
     await RelayerTokenD.removeJob("0x7905AAE5E92D9Ff324d0b2Ae5220e2Bb0078553a");
     //Add to jobs on keeper token
-    await RelayerTokenD.addJob(CoreFlashArbRelayerV2Job.address);
+    await RelayerTokenD.addJob(CoreFlashArbRelayerV3Job.address);
     //Add 1 RLR on CoreFlashArbRelay3rNew Job
     await RelayerTokenD.addRLRCredit(
-      CoreFlashArbRelayerV2Job.address,
+      CoreFlashArbRelayerV3Job.address,
       Web3.utils.toWei("1", "ether")
     );
     //Add to registry
     await KeeperJobRegistryD.add(
-      CoreFlashArbRelayerV2Job.address,
-      "CoreFlashArbRelayerV2",
+      CoreFlashArbRelayerV3Job.address,
+      "CoreFlashArbRelayerV3",
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/coreflasharbrelay3r.js"
     );
@@ -320,7 +320,7 @@ module.exports = async function (deployer) {
       const GetBackETHRelayerJob = await GetBackETHRelayer.deployed();
       //Add to jobs on keeper token
       await RelayerTokenD.addJob(GetBackETHRelayerJob.address);
-      //Add 1 RLR on UnitradeExecutorRLRV5 Job
+      //Add 1 RLR on UnitradeExecutorRLRV6 Job
       await RelayerTokenD.addRLRCredit(
         GetBackETHRelayerJob.address,
         Web3.utils.toWei("50", "ether")
@@ -341,24 +341,24 @@ module.exports = async function (deployer) {
 
       await RelayerTokenD.removeJob("0x34bcA098B78E2291E6b8E321Cc9bfB9F451713A3");
 
-      //Deploy UnitradeExecutorRLRV5
+      //Deploy UnitradeExecutorRLRV6
       await deployer.deploy(
-        UnitradeExecutorRLRV5,
+        UnitradeExecutorRLRV6,
         RelayerTokenD.address
       );
 
-      const UnitradeExecutorRLRV5Job = await UnitradeExecutorRLRV5.deployed();
+      const UnitradeExecutorRLRV6Job = await UnitradeExecutorRLRV6.deployed();
       //Add to jobs on keeper token
-      await RelayerTokenD.addJob(UnitradeExecutorRLRV5Job.address);
-      // //Add 1 RLR on UnitradeExecutorRLRV5 Job
+      await RelayerTokenD.addJob(UnitradeExecutorRLRV6Job.address);
+      // //Add 1 RLR on UnitradeExecutorRLRV6 Job
       // await RelayerTokenD.addRLRCredit(
-      //   UnitradeExecutorRLRV5Job.address,
+      //   UnitradeExecutorRLRV6Job.address,
       //   Web3.utils.toWei("150", "ether")
       // );
       //Add to registry
       await KeeperJobRegistryD.add(
-        UnitradeExecutorRLRV5Job.address,
-        "UnitradeExecutorRLRV5",
+        UnitradeExecutorRLRV6Job.address,
+        "UnitradeExecutorRLRV6",
         "",
         "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/UnitradeRelayerJob.js"
       );
@@ -369,52 +369,52 @@ module.exports = async function (deployer) {
         const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
           Addrs.Keep3rV1JobRegistry[1]
         );
-        //Remove bacfarmer job
-        await RelayerTokenD.removeJob("0xfeF626E389f8402d3CFD1fAb205Fb5a3DD5c6988");
         //Remove old unitrade job
-        await RelayerTokenD.removeJob("0xF647c8E117115fCAEf2A2b28060b258437d054B2");
+        await RelayerTokenD.removeJob("0x743bbe8416a9f1a6ff71d19f1e39F287C8225459");
+        //Remove old corearb job
+        await RelayerTokenD.removeJob("0x7A2369056c20270778651cba53F5A860ed2E29Cc");
 
-        //Deploy UnitradeExecutorRLRV5
+        //Deploy UnitradeExecutorRLRV6
         await deployer.deploy(
-          UnitradeExecutorRLRV5,
+          UnitradeExecutorRLRV6,
           RelayerTokenD.address
         );
 
-        const UnitradeExecutorRLRV5Job = await UnitradeExecutorRLRV5.deployed();
+        const UnitradeExecutorRLRV6Job = await UnitradeExecutorRLRV6.deployed();
         //Add to jobs on keeper token
-        await RelayerTokenD.addJob(UnitradeExecutorRLRV5Job.address);
-        // //Add 1 RLR on UnitradeExecutorRLRV5 Job
+        await RelayerTokenD.addJob(UnitradeExecutorRLRV6Job.address);
+        // //Add 1 RLR on UnitradeExecutorRLRV6 Job
         await RelayerTokenD.addRLRCredit(
-          UnitradeExecutorRLRV5Job.address,
+          UnitradeExecutorRLRV6Job.address,
           Web3.utils.toWei("50", "ether")
         );
         //Add to registry
         await KeeperJobRegistryD.add(
-          UnitradeExecutorRLRV5Job.address,
-          "UnitradeExecutorRLRV5",
+          UnitradeExecutorRLRV6Job.address,
+          "UnitradeExecutorRLRV6",
           "",
           "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/UnitradeRelayerJob.js"
         );
 
-        //Deploy CoreFlashArbRelayerV2
+        //Deploy CoreFlashArbRelayerV3
         await deployer.deploy(
-          CoreFlashArbRelayerV2,
+          CoreFlashArbRelayerV3,
           RelayerTokenD.address,
           Addrs.CoreFlashArb[1]
         );
 
-        const CoreFlashArbRelayerV2Job = await CoreFlashArbRelayerV2.deployed();
+        const CoreFlashArbRelayerV3Job = await CoreFlashArbRelayerV3.deployed();
         //Add to jobs on keeper token
-        await RelayerTokenD.addJob(CoreFlashArbRelayerV2Job.address);
-        //Add 50 RLR on CoreFlashArbRelayerV2 Job
+        await RelayerTokenD.addJob(CoreFlashArbRelayerV3Job.address);
+        //Add 50 RLR on CoreFlashArbRelayerV3 Job
         await RelayerTokenD.addRLRCredit(
-          CoreFlashArbRelayerV2Job.address,
+          CoreFlashArbRelayerV3Job.address,
           Web3.utils.toWei("50", "ether")
         );
         //Add to registry
         await KeeperJobRegistryD.add(
-          CoreFlashArbRelayerV2Job.address,
-          "CoreFlashArbRelayerV2",
+          CoreFlashArbRelayerV3Job.address,
+          "CoreFlashArbRelayerV3",
           "",
           "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/CoreFlashArbRelayerJob.js"
         );

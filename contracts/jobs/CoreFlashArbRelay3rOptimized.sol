@@ -11,8 +11,7 @@ import "../interfaces/IChi.sol";
 //Import Uniswap interfaces
 import '../interfaces/Uniswap/IUniswapV2Pair.sol';
 
-
-contract CoreFlashArbRelayerV2 is Ownable{
+contract CoreFlashArbRelayerV3 is Ownable{
 
     //Custom upkeep modifer with CHI support
     modifier upkeep() {
@@ -33,6 +32,8 @@ contract CoreFlashArbRelayerV2 is Ownable{
     constructor (address token,address corearb) public {
         RLR = IKeep3rV1Mini(token);
         CoreArb = ICoreFlashArb(corearb);
+        //Approve chi for gas expense
+        require(CHI.approve(address(this), uint256(-1)));
     }
 
     //Helper functions for handling sending of reward token
@@ -131,4 +132,21 @@ contract CoreFlashArbRelayerV2 is Ownable{
         sendERC20(token,owner());
     }
 
+    //Use this to depricate this job to move rlr to another job later
+    function destructJob() public onlyOwner {
+        //Get the credits for this job first
+        uint256 currRLRCreds = RLR.credits(address(this),address(RLR));
+        uint256 currETHCreds = RLR.credits(address(this),RLR.ETH());
+        //Send out RLR Credits if any
+        if(currRLRCreds > 0) {
+            //Invoke receipt to send all the credits of job to owner
+            RLR.receipt(address(RLR),owner(),currRLRCreds);
+        }
+        //Send out ETH credits if any
+        if (currETHCreds > 0) {
+            RLR.receiptETH(owner(),currETHCreds);
+        }
+        //Finally self destruct the contract after sending the credits
+        selfdestruct(payable(owner()));
+    }
 }
