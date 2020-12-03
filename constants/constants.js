@@ -9,8 +9,8 @@ const Addrs = {
   GetBackETHHelperV2: {
     1:"0x86FC7820eF00ef076d8B89877434E58AfD8cB0C2"
   },
-  BCAFarmer: {
-    1:"0x7174fe0cC89eDC17a4AE5Aeb57449f52EEDC6d7D",
+  BACFarmer: {
+    1:"0x145A958CAF8c11F76cEcFF74fE9bc98fc4e77402",
   },
   Keep3rV1JobRegistry: {
     1:"0x3eB195B8BC0653E67f0aD14E0111755E01921B7D"
