@@ -7,27 +7,32 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 //Import job interfaces and helper interfaces
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 import '../interfaces/ICoreFlashArb.sol';
+import "../interfaces/IChi.sol";
 //Import Uniswap interfaces
 import '../interfaces/Uniswap/IUniswapV2Pair.sol';
 
 
-contract CoreFlashArbRelay3rOptNew is Ownable{
+contract CoreFlashArbRelayerV2 is Ownable{
 
+    //Custom upkeep modifer with CHI support
     modifier upkeep() {
-        require(RLR.isKeeper(msg.sender), "::isKeeper: relayer is not registered");
+        uint256 gasStart = gasleft();
+        require(RLR.isKeeper(msg.sender), "!relayer");
         _;
+        uint256 gasSpent = 21000 + gasStart - gasleft() + 16 * msg.data.length;
+        CHI.freeFromUpTo(address(this), (gasSpent + 14154) / 41947);
+        //Payout RLR
         RLR.worked(msg.sender);
     }
 
     IKeep3rV1Mini public RLR;
     ICoreFlashArb public CoreArb;
-    IERC20 public CoreToken;
+    iCHI public CHI = iCHI(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
 
     //Init interfaces with addresses
-    constructor (address token,address corearb,address coretoken) public {
+    constructor (address token,address corearb) public {
         RLR = IKeep3rV1Mini(token);
         CoreArb = ICoreFlashArb(corearb);
-        CoreToken = IERC20(coretoken);
     }
 
     //Helper functions for handling sending of reward token

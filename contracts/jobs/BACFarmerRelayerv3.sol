@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import "../libraries/TransferHelper.sol";
+import "../interfaces/IChi.sol";
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 interface IBACFarmer {
@@ -14,16 +15,13 @@ interface IBACFarmer {
   function takeProfitsWithCHI() external;
 }
 
-interface iCHI {
-    function freeFromUpTo(address from, uint256 value) external returns (uint256);
-}
-
 contract BACFarmerRelayerv3 is Ownable {
     using SafeMath for uint256;
 
     IKeep3rV1Mini public RLR;
     IBACFarmer public iBACFarm;
     iCHI public CHI;
+
     uint256 public lastHarvest = 0;
     uint256 public harvestInterval = 2 hours;
 
@@ -32,13 +30,6 @@ contract BACFarmerRelayerv3 is Ownable {
         _;
         RLR.worked(msg.sender);
         lastHarvest = block.timestamp;
-    }
-
-    modifier discountCHI() {
-        uint256 gasStart = gasleft();
-        _;
-        uint256 gasSpent = 21000 + gasStart.sub(gasleft()) + 16 * msg.data.length;
-        CHI.freeFromUpTo(address(this), (gasSpent + 14154) / 41947);
     }
 
     //Use this to depricate this job to move rlr to another job later
@@ -92,12 +83,4 @@ contract BACFarmerRelayerv3 is Ownable {
         iBACFarm.takeProfits();
     }
 
-    function workWithChi() public upkeep discountCHI {
-        require(workable(),"!workable");
-        iBACFarm.takeProfitsWithCHI();
-    }
-
-    function workWithChiOwner() public onlyOwner discountCHI{
-        iBACFarm.takeProfitsWithCHI();
-    }
 }
