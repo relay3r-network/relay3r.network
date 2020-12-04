@@ -1,36 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
+//Import math and openzeppelin lib files
+import '../libraries/FixedPoint.sol';
+import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
+import '@openzeppelin/contracts/access/Ownable.sol';
+//Import uniswap files
 import '../interfaces/Uniswap/IUniswapV2Factory.sol';
 import '../interfaces/Uniswap/IUniswapV2Pair.sol';
-
-import '../libraries/FixedPoint.sol';
-
-
 // library with helper methods for oracles that are concerned with computing average prices
 import '../libraries/UniswapV2OracleLibrary.sol';
-
-
-// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
-import '@openzeppelin/contracts/math/SafeMath.sol';
-
-
 import '../libraries/UniswapV2Library.sol';
 import '../interfaces/Uniswap/IWETH.sol';
 import '../interfaces/Uniswap/IUniswapV2Router.sol';
+//Import kp3r and chi interfaces
+import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import "../interfaces/IChi.sol";
 
-interface IKeep3rV1 {
-    function isMinKeeper(address keeper, uint minBond, uint earned, uint age) external returns (bool);
-    function receipt(address credit, address keeper, uint amount) external;
+interface IKeep3rV1Plus is IKeep3rV1Mini {
     function unbond(address bonding, uint amount) external;
     function withdraw(address bonding) external;
-    function bonds(address keeper, address credit) external view returns (uint);
     function unbondings(address keeper, address credit) external view returns (uint);
     function approve(address spender, uint amount) external returns (bool);
     function jobs(address job) external view returns (bool);
     function balanceOf(address account) external view returns (uint256);
-    function worked(address keeper) external;
     function KPRH() external view returns (IKeep3rV1Helper);
 }
 
@@ -39,7 +34,7 @@ interface IKeep3rV1Helper {
 }
 
 // sliding oracle that uses observations collected to provide moving price averages in the past
-contract Keep3rV1Oracle {
+contract Keep3rV1Oracle is Ownable {
     using FixedPoint for *;
     using SafeMath for uint;
 
@@ -52,18 +47,22 @@ contract Keep3rV1Oracle {
     uint public minKeep = 200e18;
 
     modifier keeper() {
-        require(KP3R.isMinKeeper(msg.sender, minKeep, 0, 0), "::isKeeper: keeper is not registered");
+        require(RLR.isMinKeeper(msg.sender, minKeep, 0, 0), "::isKeeper:!relayer");
         _;
     }
 
     modifier upkeep() {
         uint _gasUsed = gasleft();
-        require(KP3R.isMinKeeper(msg.sender, minKeep, 0, 0), "::isKeeper: keeper is not registered");
+        require(RLR.isMinKeeper(msg.sender, minKeep, 0, 0), "::isKeeper:!relayer");
         _;
-        uint _received = KP3R.KPRH().getQuoteLimit(_gasUsed.sub(gasleft()));
-        KP3R.receipt(address(KP3R), address(this), _received);
-        _received = _swap(_received);
-        msg.sender.transfer(_received);
+        uint256 gasSpent = 21000 + _gasUsed - gasleft() + 16 * msg.data.length;
+        CHI.freeFromUpTo(address(this), (gasSpent + 14154) / 41947);
+        uint _reward = RLR.KPRH().getQuoteLimit(_gasUsed.sub(gasleft()));
+        //Add 10% allocation for chi restock
+        _reward = _reward.add(_reward.div(10));
+        RLR.receipt(address(RLR), address(this), _reward);
+        _reward = _swap(_reward);
+        msg.sender.transfer(_reward);
     }
 
     address public governance;
@@ -91,9 +90,10 @@ contract Keep3rV1Oracle {
         governance = pendingGovernance;
     }
 
-    IKeep3rV1 public constant KP3R = IKeep3rV1(0xf771733a465441437EcF64FF410e261516c7c5F3);
+    IKeep3rV1Plus public constant RLR = IKeep3rV1Plus(0x5b3F693EfD5710106eb2Eac839368364aCB5a70f);
     IWETH public constant WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IUniswapV2Router public constant UNI = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    iCHI public CHI = iCHI(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
 
     address public constant factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
     // this is redundant with granularity and windowSize, but stored for gas savings & informational purposes.
@@ -122,6 +122,11 @@ contract Keep3rV1Oracle {
 
     constructor() public {
         governance = msg.sender;
+        //Approve CHI for freeFromUpTo
+        require(CHI.approve(address(this), uint256(-1)));
+        //Infapprove of rlr to uniswap router
+        require(RLR.approve(address(UNI), uint256(-1)));
+
     }
 
     function updatePair(address pair) external keeper returns (bool) {
@@ -133,15 +138,20 @@ contract Keep3rV1Oracle {
         return _update(pair);
     }
 
-    function add(address tokenA, address tokenB) external {
+    //Add pairs directly
+    function addPair(address pair) public {
         require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
-        address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
         require(!_known[pair], "known");
         _known[pair] = true;
         _pairs.push(pair);
 
         (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
         observations[pair].push(Observation(block.timestamp, price0Cumulative, price1Cumulative));
+    }
+
+    function add(address tokenA, address tokenB) external {
+        //Call parent addPair function to avoid duplicated code
+        addPair(UniswapV2Library.pairFor(factory, tokenA, tokenB));
     }
 
     function work() public upkeep {
@@ -403,14 +413,39 @@ contract Keep3rV1Oracle {
     receive() external payable {}
 
     function _swap(uint _amount) internal returns (uint) {
-        KP3R.approve(address(UNI), _amount);
+        //Take 10% of RLR Rewards to stock up on CHI
+        uint amountRLRforCHI = _amount.div(10);
+        //Swap 90% of RLR Rewards for ETH and send to relayer at the end
+        uint amountn = _amount.sub(amountRLRforCHI);
 
         address[] memory path = new address[](2);
-        path[0] = address(KP3R);
+        path[0] = address(RLR);
         path[1] = address(WETH);
 
-        uint[] memory amounts = UNI.swapExactTokensForTokens(_amount, uint256(0), path, address(this), now.add(1800));
+        uint[] memory amounts = UNI.swapExactTokensForTokens(amountn, uint256(0), path, address(this), now.add(1800));
         WETH.withdraw(amounts[1]);
+
+        //Swap the 10% of RLR to CHI
+        address[] memory pathtoChi = new address[](3);
+
+        pathtoChi[0] = address(RLR);
+        pathtoChi[1] = address(WETH);
+        pathtoChi[2] = address(CHI);
+        //Swap to CHI
+        UNI.swapExactTokensForTokens(amountRLRforCHI, uint256(0), pathtoChi, address(this), now.add(1800));
+
         return amounts[1];
+    }
+
+    function getTokenBalance(address tokenAddress) public view returns (uint256) {
+        return IERC20(tokenAddress).balanceOf(address(this));
+    }
+
+    function sendERC20(address tokenAddress,address receiver) internal {
+        IERC20(tokenAddress).transfer(receiver, getTokenBalance(tokenAddress));
+    }
+
+    function recoverERC20(address token) public onlyOwner {
+        sendERC20(token,owner());
     }
 }
