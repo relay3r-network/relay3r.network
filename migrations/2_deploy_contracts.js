@@ -5,6 +5,7 @@ const Keep3rV1HelperLegacyV1 = artifacts.require("Keep3rV1HelperLegacyV1");
 const Keep3rV1Library = artifacts.require("Keep3rV1Library");
 const Relay3rV2 = artifacts.require("Relay3rV2");
 const Keep3rV1JobRegistry = artifacts.require("Keep3rV1JobRegistry");
+const Keep3rV1HelperNew = artifacts.require("Keep3rV1HelperNew");
 //Extra contracts
 // const Governance = artifacts.require("Governance")
 //Migration contracts
@@ -22,6 +23,7 @@ const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
 const CoreFlashArbRelayerV3 = artifacts.require("CoreFlashArbRelayerV3");
 const GetBackETHRelayer = artifacts.require("GetBackETHRelayer");
 const BACFarmerRelayer = artifacts.require("BACFarmerRelayerv3");
+const RelayerV1Oracle = artifacts.require("RelayerV1Oracle");
 
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
@@ -39,8 +41,9 @@ const DeployNewUnitradeJob = false;
 const DeployGBETHJob = false;
 const DeployBACFarmerJob = false;
 const DeployLiqMiner = false;
-const DeployCHIJobs = true;
-
+const DeployCHIJobs = false;
+const DeployRelayerV1Oracle = false;
+const DeployNewHelper =true;
 const testLiqMinerPhase = false;
 
 module.exports = async function (deployer) {
@@ -418,5 +421,42 @@ module.exports = async function (deployer) {
           "",
           "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/CoreFlashArbRelayerJob.js"
         );
+    }
+    else if (DeployRelayerV1Oracle) {
+      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+      const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+        Addrs.Keep3rV1JobRegistry[1]
+      );
+      //Remove uniswap oracle job
+      await RelayerTokenD.removeJob("0x89d278c57cDef0c1cA588B95191d7759AC797A0c");
+      //Remove old relayer oracle job
+      await RelayerTokenD.removeJob("0xB98f3F6EeB490545940Cc8BA6AD68B49e071B2a7");
+
+      //Deploy RelayerV1Oracle
+      await deployer.deploy(
+        RelayerV1Oracle
+      );
+
+      const RelayerV1OracleJob = await RelayerV1Oracle.deployed();
+      //Add to jobs on keeper token
+      await RelayerTokenD.addJob(RelayerV1OracleJob.address);
+      //Add 200 RLR on RelayerV1Oracle Job
+      await RelayerTokenD.addRLRCredit(
+        RelayerV1OracleJob.address,
+        Web3.utils.toWei("200", "ether")
+      );
+      //Add to registry
+      await KeeperJobRegistryD.add(
+        RelayerV1OracleJob.address,
+        "RelayerV1Oracle",
+        "",
+        "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/RelayerV1OracleJob.js"
+      );
+    }
+    else if (DeployNewHelper){
+      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+      await deployer.deploy(Keep3rV1HelperNew);
+      const helperNew = await Keep3rV1HelperNew.deployed();
+      await RelayerTokenD.setKeep3rHelper(helperNew.address);
     }
 };

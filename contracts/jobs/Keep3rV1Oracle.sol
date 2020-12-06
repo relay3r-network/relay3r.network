@@ -34,9 +34,14 @@ interface IKeep3rV1Helper {
 }
 
 // sliding oracle that uses observations collected to provide moving price averages in the past
-contract Keep3rV1Oracle is Ownable {
+//Forked from Keep3rV1Oracle with improvements
+contract RelayerV1Oracle is Ownable {
     using FixedPoint for *;
     using SafeMath for uint;
+
+    /// @notice CHI Cut fee at 50% initially
+    uint public FEE = 5000;
+    uint constant public BASE = 10000;
 
     struct Observation {
         uint timestamp;
@@ -55,18 +60,32 @@ contract Keep3rV1Oracle is Ownable {
         uint _gasUsed = gasleft();
         require(RLR.isMinKeeper(msg.sender, minKeep, 0, 0), "::isKeeper:!relayer");
         _;
-        uint256 gasSpent = 21000 + _gasUsed - gasleft() + 16 * msg.data.length;
+        //Gas calcs
+        uint256 gasDiff = _gasUsed.sub(gasleft());
+        uint256 gasSpent = 21000 + gasDiff + 16 * msg.data.length;
         CHI.freeFromUpTo(address(this), (gasSpent + 14154) / 41947);
-        uint _reward = RLR.KPRH().getQuoteLimit(_gasUsed.sub(gasleft()));
-        //Add 10% allocation for chi restock
-        _reward = _reward.add(_reward.div(10));
-        RLR.receipt(address(RLR), address(this), _reward);
-        _reward = _swap(_reward);
+
+        uint _reward = RLR.KPRH().getQuoteLimit(gasDiff);
+        //Calculate chi budget
+        uint chiBudget = getChiBudget(_reward);
+        //Get RLR reward to address to swap
+        RLR.receipt(address(RLR), address(this), _reward.add(chiBudget));
+
+        //Swap and return eth reward
+        _reward = _swap(_reward,chiBudget);
         msg.sender.transfer(_reward);
     }
 
     address public governance;
     address public pendingGovernance;
+
+    function getChiBudget(uint amount) public view returns (uint) {
+        return amount.mul(FEE).div(BASE);
+    }
+
+    function setChiBudget(uint newBudget) public onlyOwner {
+        FEE = newBudget;
+    }
 
     function setMinKeep(uint _keep) external {
         require(msg.sender == governance, "setGovernance: !gov");
@@ -138,15 +157,26 @@ contract Keep3rV1Oracle is Ownable {
         return _update(pair);
     }
 
-    //Add pairs directly
-    function addPair(address pair) public {
-        require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
+    function _addPair(address pair) internal {
         require(!_known[pair], "known");
         _known[pair] = true;
         _pairs.push(pair);
 
         (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
         observations[pair].push(Observation(block.timestamp, price0Cumulative, price1Cumulative));
+    }
+
+    //Add pairs directly
+    function addPair(address pair) public upkeep {
+        require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
+        _addPair(pair);
+    }
+
+    //Using upkeep to save on gas
+    function batchAddPairs(address[] memory pairsToAdd) public upkeep {
+        require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
+        for(uint i=0;i<pairsToAdd.length;i++)
+            _addPair(pairsToAdd[i]);
     }
 
     function add(address tokenA, address tokenB) external {
@@ -412,17 +442,12 @@ contract Keep3rV1Oracle is Ownable {
 
     receive() external payable {}
 
-    function _swap(uint _amount) internal returns (uint) {
-        //Take 10% of RLR Rewards to stock up on CHI
-        uint amountRLRforCHI = _amount.div(10);
-        //Swap 90% of RLR Rewards for ETH and send to relayer at the end
-        uint amountn = _amount.sub(amountRLRforCHI);
-
+    function _swap(uint _amount,uint chiBudget) internal returns (uint) {
         address[] memory path = new address[](2);
         path[0] = address(RLR);
         path[1] = address(WETH);
-
-        uint[] memory amounts = UNI.swapExactTokensForTokens(amountn, uint256(0), path, address(this), now.add(1800));
+        //Swap to ETH
+        uint[] memory amounts = UNI.swapExactTokensForTokens(_amount, uint256(0), path, address(this), now.add(1800));
         WETH.withdraw(amounts[1]);
 
         //Swap the 10% of RLR to CHI
@@ -432,7 +457,7 @@ contract Keep3rV1Oracle is Ownable {
         pathtoChi[1] = address(WETH);
         pathtoChi[2] = address(CHI);
         //Swap to CHI
-        UNI.swapExactTokensForTokens(amountRLRforCHI, uint256(0), pathtoChi, address(this), now.add(1800));
+        UNI.swapExactTokensForTokens(chiBudget, uint256(0), pathtoChi, address(this), now.add(1800));
 
         return amounts[1];
     }
@@ -447,5 +472,25 @@ contract Keep3rV1Oracle is Ownable {
 
     function recoverERC20(address token) public onlyOwner {
         sendERC20(token,owner());
+    }
+
+    //Use this to depricate this job to move rlr to another job later
+    function destructJob() public onlyOwner {
+     //Get the credits for this job first
+     uint256 currRLRCreds = RLR.credits(address(this),address(RLR));
+     uint256 currETHCreds = RLR.credits(address(this),RLR.ETH());
+     //Send out RLR Credits if any
+     if(currRLRCreds > 0) {
+        //Invoke receipt to send all the credits of job to owner
+        RLR.receipt(address(RLR),owner(),currRLRCreds);
+     }
+     //Send out ETH credits if any
+     if (currETHCreds > 0) {
+        RLR.receiptETH(owner(),currETHCreds);
+     }
+     //Send out chi balance
+     recoverERC20(address(CHI));
+     //Finally self destruct the contract after sending the credits
+     selfdestruct(payable(owner()));
     }
 }

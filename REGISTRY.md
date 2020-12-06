@@ -6,18 +6,18 @@
 | Keep3rV1Library     | [0x2e292D410cA1043cD08B72d3Ec6fea7Ed61D95Ac](https://etherscan.io/address/0x2e292D410cA1043cD08B72d3Ec6fea7Ed61D95Ac)            |
 | Keep3rV1Helper      | [0xa2123A337d32e1975a6F06FB5999E9FfC85951E8](https://etherscan.io/address/0xa2123A337d32e1975a6F06FB5999E9FfC85951E8)            |
 | Keep3rV1JobRegistry | [0x3eB195B8BC0653E67f0aD14E0111755E01921B7D](https://etherscan.io/address/0x3eB195B8BC0653E67f0aD14E0111755E01921B7D)            |
-<!-- | Keep3rV1Governance  | [0xc7212Fc959bBB606F97036e8Ac3DA7AaBf0cb735](https://etherscan.io/address/0xc7212fc959bbb606f97036e8ac3da7aabf0cb735)            |
+| <!--                | Keep3rV1Governance                                                                                                               | [0xc7212Fc959bBB606F97036e8Ac3DA7AaBf0cb735](https://etherscan.io/address/0xc7212fc959bbb606f97036e8ac3da7aabf0cb735) |
 | Keep3rV1Treasury    | [0xf7aa325404f81cf34268657ddf2d046763a8c4ed](https://etherscan.io/address/0xf7aa325404f81cf34268657ddf2d046763a8c4ed)            |
-| MetaKeep3r          | [0x93Dfa873b15ad496BA8116Ce6CfEC52eF30a9372](https://etherscan.io/address/0x93dfa873b15ad496ba8116ce6cfec52ef30a9372)            | -->
+| MetaKeep3r          | [0x93Dfa873b15ad496BA8116Ce6CfEC52eF30a9372](https://etherscan.io/address/0x93dfa873b15ad496ba8116ce6cfec52ef30a9372)            | --> |
 
 ## Jobs
 
-| Job                       | Address                                                                                                               |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| UniswapV2SlidingOracle    | [0x89d278c57cDef0c1cA588B95191d7759AC797A0c](https://etherscan.io/address/0x89d278c57cDef0c1cA588B95191d7759AC797A0c) |
-| GetBackETHRelayer         | [0x820aeB9dBA9E5191F2275e8aCf6Aa0ADcf6A84Ff](https://etherscan.io/address/0x820aeB9dBA9E5191F2275e8aCf6Aa0ADcf6A84Ff) |
-| UnitradeExecutorRLRV6     | [0x09176410207689bf8727751633376a3Bf7725791](https://etherscan.io/address/0x09176410207689bf8727751633376a3Bf7725791) |
-| CoreFlashArbRelayerV3     | [0x2620825DF4365Fd6B9389B51eac48EFc5da7F3BC](https://etherscan.io/address/0x2620825DF4365Fd6B9389B51eac48EFc5da7F3BC) |
+| Job                    | Address                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| UniswapV2SlidingOracle | [0x89d278c57cDef0c1cA588B95191d7759AC797A0c](https://etherscan.io/address/0x89d278c57cDef0c1cA588B95191d7759AC797A0c) |
+| GetBackETHRelayer      | [0x820aeB9dBA9E5191F2275e8aCf6Aa0ADcf6A84Ff](https://etherscan.io/address/0x820aeB9dBA9E5191F2275e8aCf6Aa0ADcf6A84Ff) |
+| UnitradeExecutorRLRV6  | [0x09176410207689bf8727751633376a3Bf7725791](https://etherscan.io/address/0x09176410207689bf8727751633376a3Bf7725791) |
+| CoreFlashArbRelayerV3  | [0x2620825DF4365Fd6B9389B51eac48EFc5da7F3BC](https://etherscan.io/address/0x2620825DF4365Fd6B9389B51eac48EFc5da7F3BC) |
 
 <!-- | UniswapV2Oracle           | [0x127a2975c4E1c75f1ed4757a861bbd42523DB035](https://etherscan.io/address/0x127a2975c4E1c75f1ed4757a861bbd42523DB035) | -->
 <!-- | AaveLiquidations          | [0x78C992446a0272056c7f9c47e36b051D772486Dd](https://etherscan.io/address/0x78C992446a0272056c7f9c47e36b051D772486Dd) | -->
@@ -29,9 +29,9 @@
 
 ### Pending
 
-| Job               | Address                                                                                                               |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
-<!-- | SushiswapV2Keep3r | [0xCf9f6368D6669111c47431B1f3Db982AE4468e28](https://etherscan.io/address/0xCf9f6368D6669111c47431B1f3Db982AE4468e28) | -->
+| Job  | Address           |
+| ---- | ----------------- |
+| <!-- | SushiswapV2Keep3r | [0xCf9f6368D6669111c47431B1f3Db982AE4468e28](https://etherscan.io/address/0xCf9f6368D6669111c47431B1f3Db982AE4468e28) | --> |
 
 <!-- ### Deprecated
 
@@ -40,7 +40,7 @@
 | AaveLiquidate | [0x5D18A46371e313fdC3BB66E77b10405087536e75](https://etherscan.io/address/0x5d18a46371e313fdc3bb66e77b10405087536e75) (Deprecated)      |
 | Keep3rOracle  | [0x2ec4901ebBCE581bBAE029BA6405fcA5ab3B3d23](https://etherscan.io/address/0x2ec4901ebBCE581bBAE029BA6405fcA5ab3B3d23#code) (Deprecated) | -->
 
-<!-- ## Pairs
+## Pairs
 
 | Pair | Address                                    |
 | ---- | ------------------------------------------ |
@@ -57,4 +57,5 @@
 | SNX  | 0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F |
 | COMP | 0xc00e94Cb662C3520282E6f5717214004A7f26888 |
 | CRV  | 0xD533a949740bb3306d119CC777fa900bA034cd52 |
-| KPR  | 0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44 | -->
+| RLR  | 0x5b3F693EfD5710106eb2Eac839368364aCB5a70f |
+| KP3R | 0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44 |
