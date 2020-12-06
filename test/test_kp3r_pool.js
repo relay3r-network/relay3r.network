@@ -23,7 +23,7 @@ function relDiff(a, b) {
   return  100 * Math.abs( ( a - b ) / ( (a+b)/2 ) );
  }
 
-describe("WrappedKeep3rRelayer Tests", async function () {
+ contract("WrappedKeep3rRelayer Tests", async function () {
   it("Deploy RLR", async () => {
     // Deploy RLR
     kp3rlib = await Keep3rV1Library.new();
