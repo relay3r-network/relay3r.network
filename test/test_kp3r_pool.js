@@ -20,10 +20,10 @@ var HelperD, HelperD2;
 var MockJobD, WrappedKeep3rRelayerD;
 
 function relDiff(a, b) {
-  return  100 * Math.abs( ( a - b ) / ( (a+b)/2 ) );
- }
+  return 100 * Math.abs((a - b) / ((a + b) / 2));
+}
 
- contract("WrappedKeep3rRelayer Tests", async function () {
+contract("WrappedKeep3rRelayer Tests", async function () {
   it("Deploy RLR", async () => {
     // Deploy RLR
     kp3rlib = await Keep3rV1Library.new();
@@ -118,7 +118,10 @@ function relDiff(a, b) {
   it("Proxy Job execution", async () => {
     const bondBalanceBef = await WrappedKeep3rRelayerD.getBondedBalance();
 
-    const proxyCall = await WrappedKeep3rRelayerD.executeCall(MockJobD.address,"0x322e9f04");
+    const proxyCall = await WrappedKeep3rRelayerD.executeCall(
+      MockJobD.address,
+      "0x322e9f04"
+    );
     const bondBalance = await WrappedKeep3rRelayerD.getBondedBalance();
     const proxyContractprofit = bondBalance - bondBalanceBef;
     // Obtain gasPrice from the transaction
@@ -129,8 +132,10 @@ function relDiff(a, b) {
     // console.log(`Total KP3R Reward : ${proxyContractprofit/ 1e18 } KP3R `)
     assert(
       bondBalance > parseInt(Web3.utils.toWei("250", "ether")),
-    `Bond balance on proxy hasn't increased : ${proxyContractprofit/ 1e18 } KP3R`
-  );
+      `Bond balance on proxy hasn't increased : ${
+        proxyContractprofit / 1e18
+      } KP3R`
+    );
     /*
     // console.log(`KP3R Per eth spent ${totalCost1/proxyContractprofit }`)
 
@@ -150,5 +155,4 @@ function relDiff(a, b) {
     // assert (totalCost/ourProfit < totalCost1/proxyContractprofit,`We are more profitable by ${relDiff((totalCost1/proxyContractprofit),(totalCost/ourProfit))}`)
     */
   });
-
 });
