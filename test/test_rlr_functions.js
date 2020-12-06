@@ -22,10 +22,9 @@ var MockJobD;
 var accounts, owner;
 
 contract("Relayer functional", async function () {
-
   it("Deploy RLR", async () => {
     //Init accs
-    accounts =  await web3.eth.getAccounts();
+    accounts = await web3.eth.getAccounts();
     owner = accounts[0];
     // Deploy RLR
     kp3rlib = await Keep3rV1Library.new();
@@ -65,55 +64,74 @@ contract("Relayer functional", async function () {
     //Unbon 200 tokens
     await RLR.unbond(RLR.address, Web3.utils.toWei("200", "ether"));
     //Advance 14 days
-    await helper.advanceTimeAndBlock(1.21e+6);
+    await helper.advanceTimeAndBlock(1.21e6);
     //Activate RLR bonds
     await RLR.withdraw(RLR.address);
 
-    let remainbonds = await RLR.bonds(owner,RLR.address);
+    let remainbonds = await RLR.bonds(owner, RLR.address);
     let ownerIsRelayer = await RLR.keepers(owner);
     //Check owner is still relayer
-    assert(ownerIsRelayer,"Lost relayer rights after unbond and withdraw");
+    assert(ownerIsRelayer, "Lost relayer rights after unbond and withdraw");
     //Check bonds after unbond is 0
-    assert(remainbonds == 0,`Not 0 bonds remain ${remainbonds}`);
+    assert(remainbonds == 0, `Not 0 bonds remain ${remainbonds}`);
   });
 
   it("Execute work and check reward", async () => {
     let owner = await RLR.governance();
-    let currbond = await RLR.bonds(owner,RLR.address);
+    let currbond = await RLR.bonds(owner, RLR.address);
     await MockJobD.work();
-    let newbond = await RLR.bonds(owner,RLR.address);
+    let newbond = await RLR.bonds(owner, RLR.address);
     //Check we got rewarded for the work
-    assert(newbond > currbond,`No Rewards gotten on work ${newbond}`);
+    assert(newbond > currbond, `No Rewards gotten on work ${newbond}`);
   });
-
-  it("Partial relayer rights transfer from caller", async () => {
-    //Transfer full bonds and rights to new address
-    let currBond = await RLR.bonds(owner,RLR.address);
-    //Take some away to make it partial transfer
-    currBond -= 10;
-    //Transfer partially
-    await RLR.transferKeeperRight(RLR.address,owner,accounts[1],currBond);
-    let ownerIsRelayer = await RLR.keepers(owner);
-    assert(ownerIsRelayer,"Lost rights after partial transfer");
-  });
-
-  it("Transfer relayer rights from caller", async () => {
+  describe("Relayer rights", async function () {
+    it("Partial relayer rights transfer from caller", async () => {
       //Transfer full bonds and rights to new address
-      let currBond = await RLR.bonds(owner,RLR.address);
-      await RLR.transferKeeperRight(RLR.address,owner,accounts[1],currBond);
+      let currBond = await RLR.bonds(owner, RLR.address);
+      //Take some away to make it partial transfer
+      currBond -= 10;
+      //Transfer partially
+      await RLR.transferKeeperRight(RLR.address, owner, accounts[1], currBond);
       let ownerIsRelayer = await RLR.keepers(owner);
-      assert(!ownerIsRelayer,"Still has relayer rights after full transfer");
+      assert(ownerIsRelayer, "Lost rights after partial transfer");
+    });
 
+    it("Transfer relayer rights from caller", async () => {
+      //Transfer full bonds and rights to new address
+      let currBond = await RLR.bonds(owner, RLR.address);
+      await RLR.transferKeeperRight(RLR.address, owner, accounts[1], currBond);
+      let ownerIsRelayer = await RLR.keepers(owner);
+      assert(!ownerIsRelayer, "Still has relayer rights after full transfer");
+    });
+
+    it("Transfer relayer rights from new addr to owner", async () => {
+      //Transfer full bonds and rights to new address
+      let currBond = await RLR.bonds(accounts[1], RLR.address);
+      await RLR.transferKeeperRight(RLR.address, accounts[1], owner, currBond, {
+        from: accounts[1],
+      });
+      let originIsRelayer = await RLR.keepers(accounts[1]);
+      let ownerIsRelayer = await RLR.keepers(owner);
+      assert(!originIsRelayer, "Caller still relayer");
+      assert(ownerIsRelayer, "Did not get rights after transfer back");
+    });
+
+    it("Transfer relayer rights with approval", async () => {
+      //Transfer full bonds and rights to new address
+      let currBond = await RLR.bonds(owner, RLR.address);
+      const approveret = await RLR.keeperrightapprove(
+        accounts[1],
+        RLR.address,
+        currBond
+      );
+      assert(approveret, "Approve failed");
+      await RLR.transferKeeperRight(RLR.address, owner, accounts[1], currBond, {
+        from: accounts[1],
+      });
+      let originIsRelayer = await RLR.keepers(accounts[1]);
+      let ownerIsRelayer = await RLR.keepers(owner);
+      assert(originIsRelayer, "Destination is not relayer");
+      assert(!ownerIsRelayer, "Origin still has rights");
+    });
   });
-
-  it("Transfer relayer rights from new addr to owner", async () => {
-    //Transfer full bonds and rights to new address
-    let currBond = await RLR.bonds(accounts[1],RLR.address);
-    await RLR.transferKeeperRight(RLR.address,accounts[1],owner,currBond,{from: accounts[1]});
-    let originIsRelayer = await RLR.keepers(accounts[1]);
-    let ownerIsRelayer = await RLR.keepers(owner);
-    assert(!originIsRelayer,"Caller still relayer");
-    assert(ownerIsRelayer,"Did not get rights after transfer back");
-  });
-
 });
