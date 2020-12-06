@@ -722,7 +722,7 @@ contract Relay3rV2 is ReentrancyGuard {
     event AddCredit(address indexed credit, address indexed job, address indexed creditor, uint block, uint amount);
 
     /// @notice Keeper rights approved to be spent by spender
-    event KeeperRightApproval(address indexed owner, address indexed bonding ,address indexed spender, bool allowed);
+    event KeeperRightApproval(address indexed owner, address indexed bonding ,address indexed spender, uint256 amount);
 
     /// @notice Keeper right transfered to a new address
     event KeeperRightTransfered(address indexed from, address indexed to, address indexed bond);
@@ -789,8 +789,8 @@ contract Relay3rV2 is ReentrancyGuard {
     mapping(address => bool) public blacklist;
 
     //Allowances of transfer rights of relayer rights
-    //first address is user,second is the spender,3rd is the bonding that may be allowed to be spent,finally last is bool if its allowed
-    mapping(address => mapping (address => mapping(address => bool))) internal KeeperAllowances;
+    //first address is user,second is the spender,3rd is the bonding that may be allowed to be spent,finally last is the allowance of bond amount to be spent
+    mapping(address => mapping (address => mapping(address => uint256))) public KeeperAllowances;
 
     /// @notice traversable array of keepers to make external management easier
     address[] public keeperList;
@@ -1061,15 +1061,6 @@ contract Relay3rV2 is ReentrancyGuard {
     }
 
     /**
-     * @notice Implemented by jobs to show that a keeper performed work and get paid in ETH
-     * @param keeper address of the keeper that performed the work
-     */
-    function workedETH(address keeper) external {
-        receiptETH(keeper, KPRH.getQuoteLimit(_gasUsed.sub(gasleft())));
-    }
-
-
-    /**
      * @notice Implemented by jobs to show that a keeper performed work
      * @param keeper address of the keeper that performed the work
      * @param amount the reward that should be allocated
@@ -1295,25 +1286,36 @@ contract Relay3rV2 is ReentrancyGuard {
      * @param from the address keeper rights and bonding amount is transfered from
      * @param to the address keeper rights and bonding amount is transfered to
      */
-    function transferKeeperRight(address bonding,address from,address to) public {
+    function transferKeeperRight(address bonding,address from,address to,uint256 bondAmount) public {
         //Removed dokeeperRightChecks and put it here
         require(isKeeper(from));
-        require(msg.sender == from || KeeperAllowances[from][msg.sender][bonding]);
+        require(msg.sender == from || KeeperAllowances[from][msg.sender][bonding] >= bondAmount);
 
         doDataInit(to);
 
-        //Set the user calling keeper stat to false
-        keepers[from] = false;
+        bool fullTransfer = bondAmount == bonds[from][bonding];
+
+        //Set the user calling keeper stat to false if bond amount transfered is the full bond balance
+        if(fullTransfer)
+            keepers[from] = false;
         //Set the to addr keeper stat to true
         keepers[to] = true;
 
         //Unbond from sender
-        uint currentbond = bonds[from][bonding];
-        _unbond(bonding,from,currentbond);
+        _unbond(bonding,from,bondAmount);
         //Bond to receiver
-        _bond(bonding,to,currentbond);
-        //remove rights for this address after transfer is done from caller
-        KeeperAllowances[from][msg.sender][bonding] = false;
+        _bond(bonding,to,bondAmount);
+
+        //Transfer firstSeen to new addr,which transfers the age of the relayer
+        firstSeen[to] = firstSeen[from];
+        //Reset from addr's firstSeen,transfer workcompleted data if fullTransfer
+        if(fullTransfer){
+            firstSeen[from] = 0;
+            workCompleted[to] = workCompleted[from];
+            workCompleted[from] = 0;
+        }
+        //remove rights for this address after transfer is done from caller,if caller isnt the from addr
+        if(msg.sender != from) KeeperAllowances[from][msg.sender][bonding] = KeeperAllowances[from][msg.sender][bonding].sub(bondAmount);
         emit KeeperRightTransfered(from,to,bonding);
     }
 
@@ -1421,13 +1423,13 @@ contract Relay3rV2 is ReentrancyGuard {
     /**
      * @notice Approve `spender` to transfer Keeper rights
      * @param spender The address of the account which may transfer keeper rights
-     * @param fAllow whether this spender should be able to transfer rights
+     * @param amount Amount of bonding to approve to be spent
      * @return Whether or not the approval succeeded
      */
-    function keeperrightapprove(address spender,address bonding,bool fAllow) public returns (bool) {
-        KeeperAllowances[msg.sender][spender][bonding] = fAllow;
+    function keeperrightapprove(address spender,address bonding,uint256 amount) public returns (bool) {
+        KeeperAllowances[msg.sender][spender][bonding] = amount;
 
-        emit KeeperRightApproval(msg.sender, bonding,spender, fAllow);
+        emit KeeperRightApproval(msg.sender, bonding,spender, amount);
         return true;
     }
 
