@@ -282,12 +282,6 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
     //Use this function to execute job work calls
 
     function executeCall(address target, uint value, string memory signature,bytes memory data) public upkeep {
-        //Safety check that the caller isnt calling to kp3r token contract
-        require(target != KP3RToken,"!KP3R");
-        //Check that target isnt rlr token contract
-        require(target != RLRToken,"!RLR");
-        //Check that target isnt this contract
-        require(target != address(this),"!self");
         //Check that target is a job
         require(KP3R.jobs(target),"!job");
         //Call code,taken from compound's timelock contract code
