@@ -19,6 +19,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm install
     - run: npm install truffle -g
+    - run: node createmocksecrets.js
     - run: truffle test
       env:
         CI: true
