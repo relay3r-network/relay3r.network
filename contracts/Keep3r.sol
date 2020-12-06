@@ -911,27 +911,18 @@ contract Relay3rV2 is ReentrancyGuard {
     }
 
     /**
-     * @notice Set bonding delay from governance
-     * @param newBond the new bonding delay
+     * @notice Set new delay from governance
+     * @param newDelay the new delay
+     * @param delayType the type of bond delay being updated
      */
-    function setBondingDelay(uint newBond) external onlyGovernance{
-        BOND = newBond;
-    }
-
-    /**
-     * @notice Set bonding delay from governance
-     * @param newUnbond the new unbonding delay
-     */
-    function setUnbondingDelay(uint newUnbond) external onlyGovernance{
-        UNBOND = newUnbond;
-    }
-
-    /**
-     * @notice Set liquidity bonding delay from governance
-     * @param newLiqBond the new liquidity bonding delay
-     */
-    function setLiquidityBondingDelay(uint newLiqBond) external onlyGovernance{
-        LIQUIDITYBOND = newLiqBond;
+    function setNewDelay(uint newDelay,uint delayType) external onlyGovernance {
+        require( delayType >= 1 && delayType <= 3 ,"!type");
+        if(delayType == 1)
+            BOND = newDelay;
+        else if (delayType == 2)
+            UNBOND = newDelay;
+        else
+            LIQUIDITYBOND = newDelay;
     }
 
     /**
