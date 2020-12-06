@@ -44,6 +44,7 @@ module.exports = {
         ),
       network_id: 3, // Ropsten network
     },
+    /*
     development: {
       host: "localhost",
       provider: () =>
@@ -53,6 +54,7 @@ module.exports = {
       ),
       network_id: "5777"
     },
+    */
         live: {
       provider: () =>
         new HDWalletProvider(
