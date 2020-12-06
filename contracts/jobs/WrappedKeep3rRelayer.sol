@@ -24,12 +24,11 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for iKeep3r;
 
-    address KP3RToken = 0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44;
     address RLRToken = 0x5b3F693EfD5710106eb2Eac839368364aCB5a70f;
 
     address public feeGetter = msg.sender;//Deployer is the feeGetter be default
 
-    iKeep3r public KP3R = iKeep3r(KP3RToken);
+    iKeep3r public KP3R = iKeep3r(address(KP3R));
     IKeep3rV1Mini public RLR = IKeep3rV1Mini(RLRToken);
 
     uint256 targetKP3RBond = 250e18;
@@ -89,7 +88,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
      * @notice Get bonded kp3r balance
      */
     function getBondedBalance() public view returns (uint256) {
-        return KP3R.bonds(KP3RToken,address(this));
+        return KP3R.bonds(address(this),address(KP3R));
     }
 
     /**
@@ -110,14 +109,14 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
      * @notice Get time this contract bonded tokens
      */
     function getBondTime() public view returns (uint256) {
-        return KP3R.bondings(KP3RToken,address(this));
+        return KP3R.bondings(address(KP3R),address(this));
     }
 
     /**
      * @notice Get time when partialunbond amount can be withdrawn
      */
     function getUnbondTime() public view returns (uint256) {
-        return KP3R.bondings(KP3RToken,address(this));
+        return KP3R.bondings(address(KP3R),address(this));
     }
 
     /**
@@ -166,7 +165,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
     }
 
     function totalUnderlying() public view returns (uint256) {
-        return unusedUnderlyingBalance().add(totalKP3RDeposited);
+        return unusedUnderlyingBalance().add(getBondedBalance());
     }
 
     /**
@@ -217,7 +216,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
             uint256 _missingUnderlying = _underlyingToWithdraw.sub(_unusedUnderlyingBalance);
 
             // Check if we can unbond to satisfy missing balance
-            if(workableUnbond()) KP3R.withdraw(KP3RToken);
+            if(workableUnbond()) KP3R.withdraw(address(KP3R));
 
             uint256 _underlyingAfterUnbond = unusedUnderlyingBalance();
 
@@ -249,16 +248,16 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
     /**
      * @notice Start bonding the kp3r balance in contract
     */
-    function bondBalance() public upkeep{
+    function bondBalance() public {
         require(reachedThreshold(),"!limit");
-        KP3R.bond(KP3RToken,totalKP3RDeposited);
+        KP3R.bond(address(KP3R),unusedUnderlyingBalance());
     }
 
     /**
      * @notice Activate pending bonds to activate keeper rights
     */
     function activateBonds() public upkeep {
-        KP3R.activate(KP3RToken);
+        KP3R.activate(address(KP3R));
     }
 
     function startUnbondingRewards() public upkeep {
@@ -267,7 +266,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
 
         uint256 before = unusedUnderlyingBalance();
 
-        KP3R.withdraw(KP3RToken);
+        KP3R.withdraw(address(KP3R));
 
         uint256 afterx = unusedUnderlyingBalance();
         uint256 diff = afterx.sub(before);
@@ -276,7 +275,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
 
         totalKP3RRewardsBalance = totalKP3RRewardsBalance.add(diff);
         //Now call unbond for work rewards
-        KP3R.unbond(KP3RToken,getWorkRewards());
+        KP3R.unbond(address(KP3R),getWorkRewards());
     }
 
     //Use this function to execute job work calls

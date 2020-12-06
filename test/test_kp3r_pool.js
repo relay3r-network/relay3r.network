@@ -38,6 +38,8 @@ describe("WrappedKeep3rRelayer Tests", async function () {
     kp3rlibn = await Keep3rV1Library.new();
     await Relay3rV2.link("Keep3rV1Library", kp3rlibn.address);
     KP3R = await Relay3rV2.new();
+    //Mint initial supply for us
+    await KP3R.mint(Web3.utils.toWei("20000", "ether"));
     //Deploy and set helper
     HelperD2 = await Keep3rV1HelperMock.new();
     HelperD.setToken(KP3R.address);
@@ -72,5 +74,28 @@ describe("WrappedKeep3rRelayer Tests", async function () {
 
     //Check owner is relayer
     assert(RLR.keepers(await RLR.governance()));
+  });
+  it("Send target KP3R to Pool", async () => {
+    //Approve first
+    await KP3R.approve(
+      WrappedKeep3rRelayerD.address,
+      Web3.utils.toWei("250", "ether")
+    );
+    //Deposit it
+    await WrappedKeep3rRelayerD.deposit(Web3.utils.toWei("250", "ether"));
+  });
+  it("Bond and activate pool", async () => {
+    //Deposit it
+    await WrappedKeep3rRelayerD.bondBalance();
+    //Advance 3 days
+    await helper.advanceTimeAndBlock(259200);
+    //Activate bonds
+    await WrappedKeep3rRelayerD.activateBonds();
+    const bondBalance = await WrappedKeep3rRelayerD.getBondedBalance();
+    //Check bond after activation is 250 KP3R
+    assert(
+      bondBalance.toString() === Web3.utils.toWei("250", "ether"),
+      `Bond doesnt match target : ${bondBalance}`
+    );
   });
 });
