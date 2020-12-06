@@ -45,7 +45,7 @@ contract MockJob is Ownable {
     }
 
     function work() public upkeep {
-        updateme++;
+        updateme = 1;
     }
 
 }

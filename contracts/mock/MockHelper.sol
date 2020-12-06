@@ -33,7 +33,7 @@ contract Keep3rV1HelperMock is Ownable{
     }
 
     function getQuoteLimitFor(address origin, uint gasUsed) public view returns (uint) {
-        uint _min = gasUsed.mul(PRICE).mul(uint(getFastGas()));
+        uint _min = gasUsed.mul(PRICE).mul(getFastGas());
         uint _boost = _min.mul(BOOST).div(BASE); // increase by 2.5
         uint _bond = Math.min(bonds(origin), TARGETBOND);
         return Math.max(_min, _boost.mul(_bond).div(TARGETBOND));

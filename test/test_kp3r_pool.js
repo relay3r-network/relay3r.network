@@ -18,6 +18,11 @@ var kp3rlib, kp3rlibn;
 var HelperD, HelperD2;
 //jobs
 var MockJobD, WrappedKeep3rRelayerD;
+
+function relDiff(a, b) {
+  return  100 * Math.abs( ( a - b ) / ( (a+b)/2 ) );
+ }
+
 describe("WrappedKeep3rRelayer Tests", async function () {
   it("Deploy RLR", async () => {
     // Deploy RLR
@@ -42,7 +47,7 @@ describe("WrappedKeep3rRelayer Tests", async function () {
     await KP3R.mint(Web3.utils.toWei("20000", "ether"));
     //Deploy and set helper
     HelperD2 = await Keep3rV1HelperMock.new();
-    HelperD.setToken(KP3R.address);
+    HelperD2.setToken(KP3R.address);
     await KP3R.setKeep3rHelper(HelperD2.address);
   });
   it("Deploy MockJob KP3r", async () => {
@@ -75,6 +80,17 @@ describe("WrappedKeep3rRelayer Tests", async function () {
     //Check owner is relayer
     assert(RLR.keepers(await RLR.governance()));
   });
+  it("Prepare keeper", async () => {
+    //Bond 250 tokens
+    await KP3R.bond(KP3R.address, Web3.utils.toWei("0", "ether"));
+    //Advance 3 days
+    await helper.advanceTimeAndBlock(259200);
+    //Activate RLR bonds
+    await KP3R.activate(KP3R.address);
+
+    //Check owner is keeper
+    assert(KP3R.keepers(await KP3R.governance()));
+  });
   it("Send target KP3R to Pool", async () => {
     //Approve first
     await KP3R.approve(
@@ -84,6 +100,7 @@ describe("WrappedKeep3rRelayer Tests", async function () {
     //Deposit it
     await WrappedKeep3rRelayerD.deposit(Web3.utils.toWei("250", "ether"));
   });
+
   it("Bond and activate pool", async () => {
     //Deposit it
     await WrappedKeep3rRelayerD.bondBalance();
@@ -98,4 +115,39 @@ describe("WrappedKeep3rRelayer Tests", async function () {
       `Bond doesnt match target : ${bondBalance}`
     );
   });
+  it("Proxy Job execution", async () => {
+    const bondBalanceBef = await WrappedKeep3rRelayerD.getBondedBalance();
+
+    const proxyCall = await WrappedKeep3rRelayerD.executeCall(MockJobD.address,"0x322e9f04");
+    const bondBalance = await WrappedKeep3rRelayerD.getBondedBalance();
+    const proxyContractprofit = bondBalance - bondBalanceBef;
+    // Obtain gasPrice from the transaction
+    const tx = await web3.eth.getTransaction(proxyCall.tx);
+    const totalCost1 = tx.gasPrice * proxyCall.receipt.gasUsed;
+
+    console.log(`Total tx Cost : ${totalCost1 / 1e18} ETH `)
+    console.log(`Total KP3R Reward : ${proxyContractprofit/ 1e18 } KP3R `)
+    /*
+    // console.log(`KP3R Per eth spent ${totalCost1/proxyContractprofit }`)
+
+    //Check bond after execution is > 250 KP3R
+    assert(
+        bondBalance > parseInt(Web3.utils.toWei("250", "ether")),
+      `Bond balance on proxy hasnt increased : ${proxyContractprofit/ 1e18 } KP3R`
+    );
+
+    //Check if its more profitable than running it outselves
+    const ourbonds = await KP3R.bonds(await KP3R.governance(),KP3R.address);
+    const proxyCall2 = await MockJobD.work();
+    const ourbondsnew = await KP3R.bonds(await KP3R.governance(),KP3R.address);
+    const ourProfit = ourbondsnew - ourbonds;
+    const tx2 = await web3.eth.getTransaction(proxyCall2.tx);
+    const totalCost = tx2.gasPrice * proxyCall2.receipt.gasUsed;
+    console.log(`Total tx Cost : ${ totalCost/ 1e18} ETH `)
+    console.log(`Total KP3R Reward : ${ourProfit/ 1e18 } KP3R `)
+    // console.log(`KP3R Per eth spent ${totalCost/ourProfit}`)
+    // assert (totalCost/ourProfit < totalCost1/proxyContractprofit,`We are more profitable by ${relDiff((totalCost1/proxyContractprofit),(totalCost/ourProfit))}`)
+    */
+  });
+
 });

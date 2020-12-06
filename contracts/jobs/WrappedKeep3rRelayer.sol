@@ -280,20 +280,11 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
 
     //Use this function to execute job work calls
 
-    function executeCall(address target, uint value, string memory signature,bytes memory data) public upkeep {
+    function executeCall(address target,bytes calldata data) external upkeep {
         //Check that target is a job
         require(KP3R.jobs(target),"!job");
-        //Call code,taken from compound's timelock contract code
-        bytes memory callData;
-
-        if (bytes(signature).length == 0) {
-            callData = data;
-        } else {
-            callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
-        }
-
         // solium-disable-next-line security/no-call-value
-        (bool success, bytes memory returnData) = target.call{value:value}(callData);
+        (bool success, bytes memory returnData) = target.call{value:0}(data);
         require(success,"exec fail");
     }
 
