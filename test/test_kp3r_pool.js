@@ -125,16 +125,17 @@ describe("WrappedKeep3rRelayer Tests", async function () {
     const tx = await web3.eth.getTransaction(proxyCall.tx);
     const totalCost1 = tx.gasPrice * proxyCall.receipt.gasUsed;
 
-    console.log(`Total tx Cost : ${totalCost1 / 1e18} ETH `)
-    console.log(`Total KP3R Reward : ${proxyContractprofit/ 1e18 } KP3R `)
+    // console.log(`Total tx Cost : ${totalCost1 / 1e18} ETH `)
+    // console.log(`Total KP3R Reward : ${proxyContractprofit/ 1e18 } KP3R `)
+    assert(
+      bondBalance > parseInt(Web3.utils.toWei("250", "ether")),
+    `Bond balance on proxy hasn't increased : ${proxyContractprofit/ 1e18 } KP3R`
+  );
     /*
     // console.log(`KP3R Per eth spent ${totalCost1/proxyContractprofit }`)
 
     //Check bond after execution is > 250 KP3R
-    assert(
-        bondBalance > parseInt(Web3.utils.toWei("250", "ether")),
-      `Bond balance on proxy hasnt increased : ${proxyContractprofit/ 1e18 } KP3R`
-    );
+
 
     //Check if its more profitable than running it outselves
     const ourbonds = await KP3R.bonds(await KP3R.governance(),KP3R.address);
