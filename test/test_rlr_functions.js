@@ -1,4 +1,6 @@
 var Web3 = require("web3");
+const truffleAssert = require("truffle-assertions");
+
 const helper = require("./helpers/truffleTestHelper");
 
 //Core contracts
@@ -6,7 +8,6 @@ const Keep3rV1Library = artifacts.require("Keep3rV1Library");
 const Relay3rV2 = artifacts.require("Relay3rV2");
 const Keep3rV1HelperMock = artifacts.require("Keep3rV1HelperMock");
 //Jobs
-const WrappedKeep3rRelayer = artifacts.require("WrappedKeep3rRelayer");
 const MockJob = artifacts.require("MockJob");
 
 //Global vars
@@ -130,9 +131,9 @@ contract("Relayer functional", async function () {
       await RLR.transferKeeperRight(RLR.address, owner, accounts[1], currBond, {
         from: accounts[1],
       });
-      let originIsRelayer = await RLR.keepers(accounts[1]);
+      let destinationIsRelayer = await RLR.keepers(accounts[1]);
       let ownerIsRelayer = await RLR.keepers(owner);
-      assert(originIsRelayer, "Destination is not relayer");
+      assert(destinationIsRelayer, "Destination is not relayer");
       assert(!ownerIsRelayer, "Origin still has rights");
       //Check remaining allowance is 0
       let remainingAllowance = await RLR.KeeperAllowances(
@@ -145,8 +146,23 @@ contract("Relayer functional", async function () {
         "Full transfer doesnt set allowance to 0"
       );
     });
+    it("Should fail when transfering relayer rights without approval", async () => {
+      let currBond = await RLR.bonds(owner, RLR.address);
+      await truffleAssert.reverts(
+        RLR.transferKeeperRight(RLR.address, owner, accounts[1], currBond, {
+          from: accounts[1],
+        })
+      );
+    });
+    it("Should fail when transfering relayer rights with higher bond amount than current", async () => {
+      let currBond = (await RLR.bonds(accounts[1], RLR.address)) + 10;
+      await truffleAssert.reverts(
+        RLR.transferKeeperRight(RLR.address, accounts[1], owner, currBond, {
+          from: accounts[1],
+        })
+      );
+    });
   });
-
   describe("Variable bonding delays", async function () {
     it("Set new bonding delay", async () => {
       //Get current unbonding delay
