@@ -43,7 +43,7 @@ const DeployBACFarmerJob = false;
 const DeployLiqMiner = false;
 const DeployCHIJobs = false;
 const DeployRelayerV1Oracle = false;
-const DeployNewHelper =true;
+const DeployNewHelper = true;
 const testLiqMinerPhase = false;
 
 module.exports = async function (deployer) {
@@ -238,225 +238,209 @@ module.exports = async function (deployer) {
     // //Deploy mooniswap reward contract
     // await deployer.deploy(RlrMooniRewards);
     // const RlrMooniMine = await RlrMooniRewards.deployed();
-      //Follow mainnet procedure
-      //Send 4450 RLR to UniPool Rewards
-      // RelayerTokenD.transfer(
-      //   RlrUniMine.address,
-      //   Web3.utils.toWei("4450", "ether")
-      // );
-      // //Send 4450 RLR to MooniPool Rewards
-      // RelayerTokenD.transfer(
-      //   RlrMooniMine.address,
-      //   Web3.utils.toWei("4450", "ether")
-      // );
-      //Init slow rewards on both pools
-      await RlrUniMine.initRewardSlow();
-      // await RlrMooniMine.initRewardSlow();
+    //Follow mainnet procedure
+    //Send 4450 RLR to UniPool Rewards
+    // RelayerTokenD.transfer(
+    //   RlrUniMine.address,
+    //   Web3.utils.toWei("4450", "ether")
+    // );
+    // //Send 4450 RLR to MooniPool Rewards
+    // RelayerTokenD.transfer(
+    //   RlrMooniMine.address,
+    //   Web3.utils.toWei("4450", "ether")
+    // );
+    //Init slow rewards on both pools
+    await RlrUniMine.initRewardSlow();
+    // await RlrMooniMine.initRewardSlow();
+  } else if (testLiqMinerPhase) {
+    //Deploy uniswap reward contract
+    await deployer.deploy(RlrUniRewards);
+    const RlrUniMine = await RlrUniRewards.deployed();
+    //deploy token to add liq to
+    await deployer.deploy(BurnableToken, "RelayerReward", "RLRW");
+    const Token1 = await BurnableToken.deployed();
+
+    await deployer.deploy(BurnableToken, "RLRMockLP", "RLP");
+    const TokenLP = await BurnableToken.deployed();
+
+    //Set reward token
+    await RlrUniMine.setRewardToken(Token1.address);
+    await RlrUniMine.setLPToken(TokenLP.address);
+    //Mint 89k tokens to transfer to rewards
+    await Token1.mint(Web3.utils.toWei("4450", "ether"));
+    //Now transfer 89k tokens of token1 to reward pool
+    await Token1.transfer(
+      RlrUniMine.address,
+      Web3.utils.toWei("4450", "ether")
+    );
+    //Init slow rewardrate
+    await RlrUniMine.initRewardSlow();
+    // //Init normal reward rate
+    // await RlrUniMine.initReward();
+  } else if (DeployBACFarmerJob) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+      Addrs.Keep3rV1JobRegistry[1]
+    );
+    //Deploy BACFarmerRelayer
+    await deployer.deploy(
+      BACFarmerRelayer,
+      RelayerTokenD.address,
+      Addrs.BACFarmer[1]
+    );
+
+    const BACFarmerRelayerJob = await BACFarmerRelayer.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(BACFarmerRelayerJob.address);
+    //Add 50 RLR on BACFarmerRelayer Job
+    await RelayerTokenD.addRLRCredit(
+      BACFarmerRelayerJob.address,
+      Web3.utils.toWei("50", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      BACFarmerRelayerJob.address,
+      "BACFarmerRelayerv3",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/BACFarmerRelayerJob.js"
+    );
+  } else if (DeployGBETHJob) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+      Addrs.Keep3rV1JobRegistry[1]
+    );
+
+    //Deploy GetBackETHRelayer
+    await deployer.deploy(
+      GetBackETHRelayer,
+      RelayerTokenD.address,
+      Addrs.GetBackETHHelperV2[1]
+    );
+
+    const GetBackETHRelayerJob = await GetBackETHRelayer.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(GetBackETHRelayerJob.address);
+    //Add 1 RLR on UnitradeExecutorRLRV6 Job
+    await RelayerTokenD.addRLRCredit(
+      GetBackETHRelayerJob.address,
+      Web3.utils.toWei("50", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      GetBackETHRelayerJob.address,
+      "GetBackETHRelayer",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/GetBackETHRelayerJob.js"
+    );
+  } else if (DeployNewUnitradeJob) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+      Addrs.Keep3rV1JobRegistry[1]
+    );
+
+    await RelayerTokenD.removeJob("0x34bcA098B78E2291E6b8E321Cc9bfB9F451713A3");
+
+    //Deploy UnitradeExecutorRLRV6
+    await deployer.deploy(UnitradeExecutorRLRV6, RelayerTokenD.address);
+
+    const UnitradeExecutorRLRV6Job = await UnitradeExecutorRLRV6.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(UnitradeExecutorRLRV6Job.address);
+    // //Add 1 RLR on UnitradeExecutorRLRV6 Job
+    // await RelayerTokenD.addRLRCredit(
+    //   UnitradeExecutorRLRV6Job.address,
+    //   Web3.utils.toWei("150", "ether")
+    // );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      UnitradeExecutorRLRV6Job.address,
+      "UnitradeExecutorRLRV6",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/UnitradeRelayerJob.js"
+    );
+  } else if (DeployCHIJobs) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+      Addrs.Keep3rV1JobRegistry[1]
+    );
+    //Remove old unitrade job
+    await RelayerTokenD.removeJob("0x743bbe8416a9f1a6ff71d19f1e39F287C8225459");
+    //Remove old corearb job
+    await RelayerTokenD.removeJob("0x7A2369056c20270778651cba53F5A860ed2E29Cc");
+
+    //Deploy UnitradeExecutorRLRV6
+    await deployer.deploy(UnitradeExecutorRLRV6, RelayerTokenD.address);
+
+    const UnitradeExecutorRLRV6Job = await UnitradeExecutorRLRV6.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(UnitradeExecutorRLRV6Job.address);
+    // //Add 1 RLR on UnitradeExecutorRLRV6 Job
+    await RelayerTokenD.addRLRCredit(
+      UnitradeExecutorRLRV6Job.address,
+      Web3.utils.toWei("50", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      UnitradeExecutorRLRV6Job.address,
+      "UnitradeExecutorRLRV6",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/UnitradeRelayerJob.js"
+    );
+
+    //Deploy CoreFlashArbRelayerV3
+    await deployer.deploy(
+      CoreFlashArbRelayerV3,
+      RelayerTokenD.address,
+      Addrs.CoreFlashArb[1]
+    );
+
+    const CoreFlashArbRelayerV3Job = await CoreFlashArbRelayerV3.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(CoreFlashArbRelayerV3Job.address);
+    //Add 50 RLR on CoreFlashArbRelayerV3 Job
+    await RelayerTokenD.addRLRCredit(
+      CoreFlashArbRelayerV3Job.address,
+      Web3.utils.toWei("50", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      CoreFlashArbRelayerV3Job.address,
+      "CoreFlashArbRelayerV3",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/CoreFlashArbRelayerJob.js"
+    );
+  } else if (DeployRelayerV1Oracle) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+      Addrs.Keep3rV1JobRegistry[1]
+    );
+    //Remove uniswap oracle job
+    await RelayerTokenD.removeJob("0x89d278c57cDef0c1cA588B95191d7759AC797A0c");
+    //Remove old relayer oracle job
+    await RelayerTokenD.removeJob("0xB98f3F6EeB490545940Cc8BA6AD68B49e071B2a7");
+
+    //Deploy RelayerV1Oracle
+    await deployer.deploy(RelayerV1Oracle);
+
+    const RelayerV1OracleJob = await RelayerV1Oracle.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(RelayerV1OracleJob.address);
+    //Add 200 RLR on RelayerV1Oracle Job
+    await RelayerTokenD.addRLRCredit(
+      RelayerV1OracleJob.address,
+      Web3.utils.toWei("200", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      RelayerV1OracleJob.address,
+      "RelayerV1Oracle",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/RelayerV1OracleJob.js"
+    );
+  } else if (DeployNewHelper) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    await deployer.deploy(Keep3rV1HelperNew);
+    const helperNew = await Keep3rV1HelperNew.deployed();
+    await RelayerTokenD.setKeep3rHelper(helperNew.address);
   }
-  else if (testLiqMinerPhase) {
-      //Deploy uniswap reward contract
-      await deployer.deploy(RlrUniRewards);
-      const RlrUniMine = await RlrUniRewards.deployed();
-      //deploy token to add liq to
-      await deployer.deploy(BurnableToken, "RelayerReward", "RLRW");
-      const Token1 = await BurnableToken.deployed();
-
-      await deployer.deploy(BurnableToken, "RLRMockLP", "RLP");
-      const TokenLP = await BurnableToken.deployed();
-
-      //Set reward token
-      await RlrUniMine.setRewardToken(Token1.address);
-      await RlrUniMine.setLPToken(TokenLP.address);
-      //Mint 89k tokens to transfer to rewards
-      await Token1.mint(Web3.utils.toWei("4450", "ether"));
-      //Now transfer 89k tokens of token1 to reward pool
-      await Token1.transfer(
-        RlrUniMine.address,
-        Web3.utils.toWei("4450", "ether")
-      );
-      //Init slow rewardrate
-      await RlrUniMine.initRewardSlow();
-      // //Init normal reward rate
-      // await RlrUniMine.initReward();
-    }
-    else if (DeployBACFarmerJob) {
-      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
-      const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
-        Addrs.Keep3rV1JobRegistry[1]
-      );
-      //Deploy BACFarmerRelayer
-      await deployer.deploy(
-        BACFarmerRelayer,
-        RelayerTokenD.address,
-        Addrs.BACFarmer[1]
-      );
-
-      const BACFarmerRelayerJob = await BACFarmerRelayer.deployed();
-      //Add to jobs on keeper token
-      await RelayerTokenD.addJob(BACFarmerRelayerJob.address);
-      //Add 50 RLR on BACFarmerRelayer Job
-      await RelayerTokenD.addRLRCredit(
-        BACFarmerRelayerJob.address,
-        Web3.utils.toWei("50", "ether")
-      );
-      //Add to registry
-      await KeeperJobRegistryD.add(
-        BACFarmerRelayerJob.address,
-        "BACFarmerRelayerv3",
-        "",
-        "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/BACFarmerRelayerJob.js"
-      );
-    }
-    else if (DeployGBETHJob) {
-      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
-      const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
-        Addrs.Keep3rV1JobRegistry[1]
-      );
-
-      //Deploy GetBackETHRelayer
-      await deployer.deploy(
-        GetBackETHRelayer,
-        RelayerTokenD.address,
-        Addrs.GetBackETHHelperV2[1]
-      );
-
-      const GetBackETHRelayerJob = await GetBackETHRelayer.deployed();
-      //Add to jobs on keeper token
-      await RelayerTokenD.addJob(GetBackETHRelayerJob.address);
-      //Add 1 RLR on UnitradeExecutorRLRV6 Job
-      await RelayerTokenD.addRLRCredit(
-        GetBackETHRelayerJob.address,
-        Web3.utils.toWei("50", "ether")
-      );
-      //Add to registry
-      await KeeperJobRegistryD.add(
-        GetBackETHRelayerJob.address,
-        "GetBackETHRelayer",
-        "",
-        "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/GetBackETHRelayerJob.js"
-      );
-    }
-    else if (DeployNewUnitradeJob) {
-      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
-      const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
-        Addrs.Keep3rV1JobRegistry[1]
-      );
-
-      await RelayerTokenD.removeJob("0x34bcA098B78E2291E6b8E321Cc9bfB9F451713A3");
-
-      //Deploy UnitradeExecutorRLRV6
-      await deployer.deploy(
-        UnitradeExecutorRLRV6,
-        RelayerTokenD.address
-      );
-
-      const UnitradeExecutorRLRV6Job = await UnitradeExecutorRLRV6.deployed();
-      //Add to jobs on keeper token
-      await RelayerTokenD.addJob(UnitradeExecutorRLRV6Job.address);
-      // //Add 1 RLR on UnitradeExecutorRLRV6 Job
-      // await RelayerTokenD.addRLRCredit(
-      //   UnitradeExecutorRLRV6Job.address,
-      //   Web3.utils.toWei("150", "ether")
-      // );
-      //Add to registry
-      await KeeperJobRegistryD.add(
-        UnitradeExecutorRLRV6Job.address,
-        "UnitradeExecutorRLRV6",
-        "",
-        "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/UnitradeRelayerJob.js"
-      );
-    }
-
-    else if (DeployCHIJobs) {
-        const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
-        const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
-          Addrs.Keep3rV1JobRegistry[1]
-        );
-        //Remove old unitrade job
-        await RelayerTokenD.removeJob("0x743bbe8416a9f1a6ff71d19f1e39F287C8225459");
-        //Remove old corearb job
-        await RelayerTokenD.removeJob("0x7A2369056c20270778651cba53F5A860ed2E29Cc");
-
-        //Deploy UnitradeExecutorRLRV6
-        await deployer.deploy(
-          UnitradeExecutorRLRV6,
-          RelayerTokenD.address
-        );
-
-        const UnitradeExecutorRLRV6Job = await UnitradeExecutorRLRV6.deployed();
-        //Add to jobs on keeper token
-        await RelayerTokenD.addJob(UnitradeExecutorRLRV6Job.address);
-        // //Add 1 RLR on UnitradeExecutorRLRV6 Job
-        await RelayerTokenD.addRLRCredit(
-          UnitradeExecutorRLRV6Job.address,
-          Web3.utils.toWei("50", "ether")
-        );
-        //Add to registry
-        await KeeperJobRegistryD.add(
-          UnitradeExecutorRLRV6Job.address,
-          "UnitradeExecutorRLRV6",
-          "",
-          "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/UnitradeRelayerJob.js"
-        );
-
-        //Deploy CoreFlashArbRelayerV3
-        await deployer.deploy(
-          CoreFlashArbRelayerV3,
-          RelayerTokenD.address,
-          Addrs.CoreFlashArb[1]
-        );
-
-        const CoreFlashArbRelayerV3Job = await CoreFlashArbRelayerV3.deployed();
-        //Add to jobs on keeper token
-        await RelayerTokenD.addJob(CoreFlashArbRelayerV3Job.address);
-        //Add 50 RLR on CoreFlashArbRelayerV3 Job
-        await RelayerTokenD.addRLRCredit(
-          CoreFlashArbRelayerV3Job.address,
-          Web3.utils.toWei("50", "ether")
-        );
-        //Add to registry
-        await KeeperJobRegistryD.add(
-          CoreFlashArbRelayerV3Job.address,
-          "CoreFlashArbRelayerV3",
-          "",
-          "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/CoreFlashArbRelayerJob.js"
-        );
-    }
-    else if (DeployRelayerV1Oracle) {
-      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
-      const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
-        Addrs.Keep3rV1JobRegistry[1]
-      );
-      //Remove uniswap oracle job
-      await RelayerTokenD.removeJob("0x89d278c57cDef0c1cA588B95191d7759AC797A0c");
-      //Remove old relayer oracle job
-      await RelayerTokenD.removeJob("0xB98f3F6EeB490545940Cc8BA6AD68B49e071B2a7");
-
-      //Deploy RelayerV1Oracle
-      await deployer.deploy(
-        RelayerV1Oracle
-      );
-
-      const RelayerV1OracleJob = await RelayerV1Oracle.deployed();
-      //Add to jobs on keeper token
-      await RelayerTokenD.addJob(RelayerV1OracleJob.address);
-      //Add 200 RLR on RelayerV1Oracle Job
-      await RelayerTokenD.addRLRCredit(
-        RelayerV1OracleJob.address,
-        Web3.utils.toWei("200", "ether")
-      );
-      //Add to registry
-      await KeeperJobRegistryD.add(
-        RelayerV1OracleJob.address,
-        "RelayerV1Oracle",
-        "",
-        "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/RelayerV1OracleJob.js"
-      );
-    }
-    else if (DeployNewHelper){
-      const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
-      await deployer.deploy(Keep3rV1HelperNew);
-      const helperNew = await Keep3rV1HelperNew.deployed();
-      await RelayerTokenD.setKeep3rHelper(helperNew.address);
-    }
 };
