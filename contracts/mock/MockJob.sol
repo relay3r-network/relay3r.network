@@ -2,13 +2,11 @@
 pragma solidity >=0.6.12;
 import '@openzeppelin/contracts/access/Ownable.sol';
 //Import job interfaces and helper interfaces
-import '../interfaces/IGetBackETHHelperV2.sol';
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 
 contract MockJob is Ownable {
     IKeep3rV1Mini public RLR;
-    IGetBackETHHelperV2 public iGBETH;
     uint256 updateme = 0;
 
     modifier upkeep() {

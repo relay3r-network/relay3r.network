@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../libraries/TransferHelper.sol";
 import "../interfaces/Keep3r/IKeep3rV1Mini.sol";
 
@@ -20,7 +21,7 @@ interface iKeep3r is IKeep3rV1Mini ,IERC20 {
     function withdraw(address bonding) external;
 }
 
-contract WrappedKeep3rRelayer is Ownable, ERC20 {
+contract WrappedKeep3rRelayer is Ownable, ERC20, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for iKeep3r;
 
@@ -61,6 +62,8 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
         KP3R = iKeep3r(_token);
         RLR = IKeep3rV1Mini(_tokenrlr);
     }
+
+    receive() external payable {}
 
     modifier upkeep() {
         require(RLR.isKeeper(msg.sender), "::isKeeper: relayer is not registered");
@@ -153,7 +156,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
     }
 
     function workableUnbond() public view returns (bool) {
-        return (block.timestamp - lastUnbond) > unbondTimeFrame;
+        return (block.timestamp - lastUnbond) > unbondTimeFrame && getWorkRewardsRemaining() > 0;
     }
 
     function getPricePerFullShare() public view returns (uint256) {
@@ -206,17 +209,18 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
 
     /** Withdraw
     *  User should withdraw amount of KP3R Share erc20 tokens into the pool and receive KP3R  back */
-    function withdraw(uint256 _shares) public returns (uint256 _underlyingToWithdraw) {
+    function withdraw(uint256 _shares) public nonReentrant returns (uint256 _underlyingToWithdraw)  {
         _underlyingToWithdraw = (totalUnderlying().mul(_shares)).div(totalSupply());
+        //For MetaKeep3r Rewards
+        uint256 _underlyingToWithdrawETH = (address(this).balance.mul(_shares)).div(totalSupply());
         _burn(msg.sender, _shares);
         uint256 fee = getProtocolFees(_underlyingToWithdraw);
         // Check balance
         uint256 _unusedUnderlyingBalance = unusedUnderlyingBalance();
         if (_underlyingToWithdraw > _unusedUnderlyingBalance) {
-            uint256 _missingUnderlying = _underlyingToWithdraw.sub(_unusedUnderlyingBalance);
 
             // Check if we can unbond to satisfy missing balance
-            if(workableUnbond()) KP3R.withdraw(address(KP3R));
+            if(workableUnbond()) _startUnbond();
 
             uint256 _underlyingAfterUnbond = unusedUnderlyingBalance();
 
@@ -234,6 +238,8 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
         KP3R.safeTransfer(feeGetter, fee);
         //Update deposit data
         deposits[msg.sender] = deposits[msg.sender].sub(_underlyingToWithdraw);
+        //Send the eth cut from work reward
+        msg.sender.call{value:_underlyingToWithdrawETH}("");
 
         emit Withdrew(msg.sender, _shares, _underlyingToWithdraw,fee);
     }
@@ -263,7 +269,10 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
     function startUnbondingRewards() public upkeep {
         //Check if we have pending unbonds,if so withdraw those to contract
         require(workableUnbond(),"!workable");
+        _startUnbond();
+    }
 
+    function _startUnbond() internal {
         uint256 before = unusedUnderlyingBalance();
 
         KP3R.withdraw(address(KP3R));
@@ -284,7 +293,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20 {
         //Check that target is a job
         require(KP3R.jobs(target),"!job");
         // solium-disable-next-line security/no-call-value
-        (bool success, bytes memory returnData) = target.call{value:0}(data);
+        (bool success, ) = target.call{value:0}(data);
         require(success,"exec fail");
     }
 

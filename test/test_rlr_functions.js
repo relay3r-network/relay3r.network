@@ -22,7 +22,7 @@ var MockJobD;
 //Accounts
 var accounts, owner;
 
-contract("Relayer functional", async function () {
+contract("Relayer", async function () {
   it("Deploy RLR", async () => {
     //Init accs
     accounts = await web3.eth.getAccounts();

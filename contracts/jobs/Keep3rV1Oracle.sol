@@ -16,6 +16,7 @@ import '../libraries/UniswapV2Library.sol';
 import '../interfaces/Uniswap/IWETH.sol';
 import '../interfaces/Uniswap/IUniswapV2Router.sol';
 //Import kp3r and chi interfaces
+import '../interfaces/Keep3r/IKeep3rV1Helper.sol';
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
 import "../interfaces/IChi.sol";
 
@@ -27,10 +28,6 @@ interface IKeep3rV1Plus is IKeep3rV1Mini {
     function jobs(address job) external view returns (bool);
     function balanceOf(address account) external view returns (uint256);
     function KPRH() external view returns (IKeep3rV1Helper);
-}
-
-interface IKeep3rV1Helper {
-    function getQuoteLimit(uint gasUsed) external view returns (uint);
 }
 
 // sliding oracle that uses observations collected to provide moving price averages in the past

@@ -74,7 +74,7 @@ contract MetaKeep3r {
 
     function task(address job, bytes calldata data) external upkeep {
         require(KP3R.jobs(job), "MetaKeep3r::work: invalid job");
-        (bool success,) = job.call.value(0)(data);
+        (bool success,) = job.call{value : 0}(data);
         require(success, "MetaKeep3r::work: job failure");
     }
 
