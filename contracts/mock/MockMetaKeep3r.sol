@@ -32,7 +32,6 @@ contract MockMetaKeep3r is Ownable {
         if (_balance < _received) {
             KP3R.receipt(address(KP3R), address(this), _received.sub(_balance));
         }
-        _received = _swap(_received);
     }
 
     //Init interfaces with addresses
@@ -66,9 +65,6 @@ contract MockMetaKeep3r is Ownable {
     function work(address job) external upkeep {
         require(KP3R.jobs(job), "MetaKeep3r::work: invalid job");
         IKeep3rJob(job).work();
-    }
-    function _swap(uint _amount) internal returns (uint) {
-        return _amount;
     }
 
 }

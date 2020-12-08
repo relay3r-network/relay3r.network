@@ -38,7 +38,7 @@ contract MockJob is Ownable {
      selfdestruct(payable(owner()));
     }
 
-    function workable() public view returns (bool) {
+    function workable() public pure returns (bool) {
         return true;
     }
 
