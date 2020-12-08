@@ -239,8 +239,8 @@ contract WrappedKeep3rRelayer is Ownable, ERC20, ReentrancyGuard {
         //Update deposit data
         deposits[msg.sender] = deposits[msg.sender].sub(_underlyingToWithdraw);
         //Send the eth cut from work reward
-        msg.sender.call{value:_underlyingToWithdrawETH}("");
-
+        (bool success ,) = msg.sender.call{value:_underlyingToWithdrawETH}("");
+        require(success,"ETH Share send failed");
         emit Withdrew(msg.sender, _shares, _underlyingToWithdraw,fee);
     }
 
@@ -294,7 +294,7 @@ contract WrappedKeep3rRelayer is Ownable, ERC20, ReentrancyGuard {
         require(KP3R.jobs(target),"!job");
         // solium-disable-next-line security/no-call-value
         (bool success, ) = target.call{value:0}(data);
-        require(success,"exec fail");
+        require(success,"jobCallFail");
     }
 
 

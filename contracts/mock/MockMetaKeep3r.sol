@@ -10,7 +10,11 @@ interface IKeep3rV1Plus is IKeep3rV1Mini {
     function KPRH() external view returns (IKeep3rV1Helper);
     function jobs ( address ) external view returns ( bool );
     function balanceOf(address account) external view returns (uint256);
-
+    function activate(address bonding) external;
+    function unbondings(address keeper, address credit) external view returns (uint);
+    function unbond(address bonding, uint amount) external;
+    function withdraw(address bonding) external;
+    function bond(address bonding, uint amount) external;
 }
 interface IKeep3rJob {
     function work() external;
@@ -32,6 +36,9 @@ contract MockMetaKeep3r is Ownable {
         if (_balance < _received) {
             KP3R.receipt(address(KP3R), address(this), _received.sub(_balance));
         }
+        //Send eth as reward,we mock this to the _received value for now
+        (bool success,) = msg.sender.call{value:_received}("");
+        require(success,"Relayer ETH Reward send fail");
     }
 
     //Init interfaces with addresses
@@ -62,6 +69,24 @@ contract MockMetaKeep3r is Ownable {
         (bool success,) = job.call{value : 0}(data);
         require(success, "MetaKeep3r::work: job failure");
     }
+    function bond() external {
+        KP3R.bond(address(KP3R),0);
+    }
+    function activateBonds() external {
+        KP3R.activate(address(KP3R));
+    }
+
+    function unbond() external {
+        require(KP3R.unbondings(address(this), address(KP3R)) < now, "MetaKeep3r::unbond: unbonding");
+        KP3R.unbond(address(KP3R), KP3R.bonds(address(this), address(KP3R)));
+    }
+
+    function withdraw() external {
+        KP3R.withdraw(address(KP3R));
+        KP3R.unbond(address(KP3R), KP3R.bonds(address(this), address(KP3R)));
+    }
+
+
     function work(address job) external upkeep {
         require(KP3R.jobs(job), "MetaKeep3r::work: invalid job");
         IKeep3rJob(job).work();

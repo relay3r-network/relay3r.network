@@ -66,12 +66,16 @@ contract("WrappedKeep3rRelayer", async function () {
     MockMetaKeep3rD = await MockMetaKeep3r.new(KP3R.address);
     //Add job
     await KP3R.addJob(MockMetaKeep3rD.address);
-    //Add 10 ETH Credits for MockMetaKeep3r
-    await KP3R.addCreditETH(MockMetaKeep3rD.address,{ value : Web3.utils.toWei("10", "ether") });
-    let balance = await web3.eth.getBalance(KP3R.address)
-    let target = Web3.utils.toWei("10", "ether");
-    target -= target * 0.003;
-    assert(balance == target,`Credit wasnt credited ${balance}`);
+    // add 100 kp3r to job
+    await KP3R.addRLRCredit(MockMetaKeep3rD.address,Web3.utils.toWei("100", "ether"));
+    //send mock metakeep3r 10 eth to pay as rewards to emulate the swap
+    await MockMetaKeep3rD.send(Web3.utils.toWei("10", "ether"));
+    //Bond 0 tokens
+    await MockMetaKeep3rD.bond();
+    //Fast forward 3 days
+    await helper.advanceTimeAndBlock(259200);
+    // activate metakeep3r
+    await MockMetaKeep3rD.activateBonds();
   });
   it("Deploy WrappedKeep3rRelayer", async () => {
     //Deploy and add wrapped keeper relayer job
@@ -98,7 +102,7 @@ contract("WrappedKeep3rRelayer", async function () {
   });
   it("Prepare keeper", async () => {
     //Bond 250 tokens
-    await KP3R.bond(KP3R.address, Web3.utils.toWei("0", "ether"));
+    await KP3R.bond(KP3R.address, Web3.utils.toWei("250", "ether"));
     //Advance 3 days
     await helper.advanceTimeAndBlock(259200);
     //Activate RLR bonds
@@ -171,30 +175,37 @@ contract("WrappedKeep3rRelayer", async function () {
     // assert (totalCost/ourProfit < totalCost1/proxyContractprofit,`We are more profitable by ${relDiff((totalCost1/proxyContractprofit),(totalCost/ourProfit))}`)
     */
   });
-/*
-  it("Proxy MetaKeep3r Job execution", async () => {
-    const bondBalanceBef = await WrappedKeep3rRelayerD.getBondedBalance();
+  it("Direct MetaKeep3r Job execution", async () => {
+    const currentETHBalance = await web3.eth.getBalance(owner);
     //first get encoded bytes to call to metakeep3r,then call it to wrapped relayer
     //Metakeep3r call
-    const proxyCallxx = MockMetaKeep3rD.contract.methods.work(MockJobD.address).encodeABI()
-
-    console.log(proxyCallxx);
-    const proxyCall = await WrappedKeep3rRelayerD.executeCall(MockMetaKeep3rD.address,proxyCallxx)
-
-    const bondBalance = await WrappedKeep3rRelayerD.getBondedBalance();
-    const proxyContractprofit = bondBalance - bondBalanceBef;
-    // Obtain gasPrice from the transaction
-    const tx = await web3.eth.getTransaction(proxyCall.tx);
-    const totalCost1 = tx.gasPrice * proxyCall.receipt.gasUsed;
+    await MockMetaKeep3rD.work(MockJobD.address);
+    const afterETHBalance = await web3.eth.getBalance(owner);
+    assert(
+      afterETHBalance > currentETHBalance,
+      `ETH Balance hasn't increased : ${
+        afterETHBalance - currentETHBalance / 1e18
+      } ETH diff`
+    );
+  })
+  
+  it("Proxy MetaKeep3r Job execution", async () => {
+    const currentETHBalance = await web3.eth.getBalance(WrappedKeep3rRelayerD.address);
+    const workCall = MockJobD.contract.methods.work().encodeABI();
+    //first get encoded bytes to call to metakeep3r,then call it to wrapped relayer
+    //Metakeep3r call
+    const calldata = await MockMetaKeep3rD.contract.methods.task(MockJobD.address,workCall).encodeABI()
+    await WrappedKeep3rRelayerD.executeCall(MockMetaKeep3rD.address,calldata);
+    const afterETHBalance = await web3.eth.getBalance(WrappedKeep3rRelayerD.address);
 
     // console.log(`Total tx Cost : ${totalCost1 / 1e18} ETH `)
     // console.log(`Total KP3R Reward : ${proxyContractprofit/ 1e18 } KP3R `)
     assert(
-      bondBalance > parseInt(Web3.utils.toWei("250", "ether")),
-      `Bond balance on proxy hasn't increased : ${
-        proxyContractprofit / 1e18
-      } KP3R`
+      afterETHBalance > currentETHBalance,
+      `ETH Balance hasn't increased : ${
+        afterETHBalance - currentETHBalance / 1e18
+      } ETH diff`
     );
   })
-*/
+
 });
