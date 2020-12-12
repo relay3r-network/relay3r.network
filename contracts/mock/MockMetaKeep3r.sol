@@ -69,12 +69,6 @@ contract MockMetaKeep3r is Ownable {
         (bool success,) = job.call{value : 0}(data);
         require(success, "MetaKeep3r::work: job failure");
     }
-    function bond() external {
-        KP3R.bond(address(KP3R),0);
-    }
-    function activateBonds() external {
-        KP3R.activate(address(KP3R));
-    }
 
     function unbond() external {
         require(KP3R.unbondings(address(this), address(KP3R)) < now, "MetaKeep3r::unbond: unbonding");

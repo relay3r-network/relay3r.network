@@ -70,12 +70,8 @@ contract("WrappedKeep3rRelayer", async function () {
     await KP3R.addRLRCredit(MockMetaKeep3rD.address,Web3.utils.toWei("100", "ether"));
     //send mock metakeep3r 10 eth to pay as rewards to emulate the swap
     await MockMetaKeep3rD.send(Web3.utils.toWei("10", "ether"));
-    //Bond 0 tokens
-    await MockMetaKeep3rD.bond();
-    //Fast forward 3 days
-    await helper.advanceTimeAndBlock(259200);
-    // activate metakeep3r
-    await MockMetaKeep3rD.activateBonds();
+    //Activate metakeep3r by adding 0 votes to metakeep3r addr
+    await KP3R.addVotes(MockMetaKeep3rD.address,0);
   });
   it("Deploy WrappedKeep3rRelayer", async () => {
     //Deploy and add wrapped keeper relayer job

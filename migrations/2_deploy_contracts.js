@@ -41,7 +41,7 @@ const DeployGBETHJob = false;
 const DeployBACFarmerJob = false;
 const DeployLiqMiner = false;
 const DeployCHIJobs = false;
-const DeployRelayerV1Oracle = true;
+const DeployRelayerV1Oracle = false;
 const DeployNewHelper = false;
 const testLiqMinerPhase = false;
 
