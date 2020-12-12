@@ -5,7 +5,7 @@ const Keep3rV1HelperLegacyV1 = artifacts.require("Keep3rV1HelperLegacyV1");
 const Keep3rV1Library = artifacts.require("Keep3rV1Library");
 const Relay3rV2 = artifacts.require("Relay3rV2");
 const Keep3rV1JobRegistry = artifacts.require("Keep3rV1JobRegistry");
-const Keep3rV1HelperNew = artifacts.require("Keep3rV1HelperNew");
+const Keep3rV1HelperNewCustom = artifacts.require("Keep3rV1HelperNewCustom");
 //Extra contracts
 // const Governance = artifacts.require("Governance")
 //Migration contracts
@@ -23,7 +23,7 @@ const UniswapV2SlidingOracle = artifacts.require("UniswapV2SlidingOracle");
 const CoreFlashArbRelayerV3 = artifacts.require("CoreFlashArbRelayerV3");
 const GetBackETHRelayer = artifacts.require("GetBackETHRelayer");
 const BACFarmerRelayer = artifacts.require("BACFarmerRelayerv3");
-const RelayerV1Oracle = artifacts.require("RelayerV1Oracle");
+const RelayerV1OracleCustom = artifacts.require("RelayerV1OracleCustom");
 
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
@@ -42,8 +42,8 @@ const DeployGBETHJob = false;
 const DeployBACFarmerJob = false;
 const DeployLiqMiner = false;
 const DeployCHIJobs = false;
-const DeployRelayerV1Oracle = false;
-const DeployNewHelper = true;
+const DeployRelayerV1Oracle = true;
+const DeployNewHelper = false;
 const testLiqMinerPhase = false;
 
 module.exports = async function (deployer) {
@@ -414,18 +414,16 @@ module.exports = async function (deployer) {
     const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
       Addrs.Keep3rV1JobRegistry[1]
     );
-    //Remove uniswap oracle job
-    await RelayerTokenD.removeJob("0x89d278c57cDef0c1cA588B95191d7759AC797A0c");
     //Remove old relayer oracle job
-    await RelayerTokenD.removeJob("0xB98f3F6EeB490545940Cc8BA6AD68B49e071B2a7");
+    await RelayerTokenD.removeJob("0xd5Cf1Cc695226B2243d7416Ec1B478577c50f2aF");
 
-    //Deploy RelayerV1Oracle
-    await deployer.deploy(RelayerV1Oracle);
+    //Deploy RelayerV1OracleCustom
+    await deployer.deploy(RelayerV1OracleCustom);
 
-    const RelayerV1OracleJob = await RelayerV1Oracle.deployed();
+    const RelayerV1OracleJob = await RelayerV1OracleCustom.deployed();
     //Add to jobs on keeper token
     await RelayerTokenD.addJob(RelayerV1OracleJob.address);
-    //Add 200 RLR on RelayerV1Oracle Job
+    //Add 200 RLR on RelayerV1OracleCustom Job
     await RelayerTokenD.addRLRCredit(
       RelayerV1OracleJob.address,
       Web3.utils.toWei("200", "ether")
@@ -433,14 +431,17 @@ module.exports = async function (deployer) {
     //Add to registry
     await KeeperJobRegistryD.add(
       RelayerV1OracleJob.address,
-      "RelayerV1Oracle",
+      "RelayerV1OracleCustom",
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/RelayerV1OracleJob.js"
     );
+    const helperNew = await Keep3rV1HelperNewCustom.at("0x95e7F7c9F4dF96B92cb470F4C0cEA41de97662ae");
+    await helperNew.setOracle(RelayerV1OracleJob.address);
+    //await RelayerTokenD.setKeep3rHelper(helperNew.address);
   } else if (DeployNewHelper) {
     const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
-    await deployer.deploy(Keep3rV1HelperNew);
-    const helperNew = await Keep3rV1HelperNew.deployed();
+    await deployer.deploy(Keep3rV1HelperNewCustom);
+    const helperNew = await Keep3rV1HelperNewCustom.deployed();
     await RelayerTokenD.setKeep3rHelper(helperNew.address);
   }
 };

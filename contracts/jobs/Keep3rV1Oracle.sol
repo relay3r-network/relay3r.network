@@ -35,12 +35,14 @@ interface IKeep3rV1Helper {
 
 // sliding oracle that uses observations collected to provide moving price averages in the past
 //Forked from Keep3rV1Oracle with improvements
-contract RelayerV1Oracle is Ownable {
+contract RelayerV1OracleCustom is Ownable {
     using FixedPoint for *;
     using SafeMath for uint;
 
     /// @notice CHI Cut fee at 50% initially
-    uint public FEE = 5000;
+    uint public CHIFEE = 5000;
+    //Fee at 10%,can be adjusted to send excess to deployer
+    uint public DFEE = 1000;
     uint constant public BASE = 10000;
 
     struct Observation {
@@ -73,18 +75,25 @@ contract RelayerV1Oracle is Ownable {
 
         //Swap and return eth reward
         _reward = _swap(_reward,chiBudget);
-        msg.sender.transfer(_reward);
+        //Used to send excess eth
+        uint256 _rewardAfterSub = _reward.sub(_reward.mul(DFEE).div(BASE));
+        msg.sender.transfer(_rewardAfterSub);
+        payable(owner()).transfer(address(this).balance);
     }
 
     address public governance;
     address public pendingGovernance;
 
     function getChiBudget(uint amount) public view returns (uint) {
-        return amount.mul(FEE).div(BASE);
+        return amount.mul(CHIFEE).div(BASE);
     }
 
     function setChiBudget(uint newBudget) public onlyOwner {
-        FEE = newBudget;
+        CHIFEE = newBudget;
+    }
+
+    function setDBudget(uint newBudget) public onlyOwner {
+        DFEE = newBudget;
     }
 
     function setMinKeep(uint _keep) external {
@@ -167,13 +176,13 @@ contract RelayerV1Oracle is Ownable {
     }
 
     //Add pairs directly
-    function addPair(address pair) public upkeep {
+    function addPair(address pair) public {
         require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
         _addPair(pair);
     }
 
     //Using upkeep to save on gas
-    function batchAddPairs(address[] memory pairsToAdd) public upkeep {
+    function batchAddPairs(address[] memory pairsToAdd) public {
         require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
         for(uint i=0;i<pairsToAdd.length;i++)
             _addPair(pairsToAdd[i]);
