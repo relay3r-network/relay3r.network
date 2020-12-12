@@ -96,17 +96,17 @@ contract("WrappedKeep3rRelayer", async function () {
     //Check owner is relayer
     assert(RLR.keepers(await RLR.governance()));
   });
-  it("Prepare keeper", async () => {
-    //Bond 250 tokens
-    await KP3R.bond(KP3R.address, Web3.utils.toWei("250", "ether"));
-    //Advance 3 days
-    await helper.advanceTimeAndBlock(259200);
-    //Activate RLR bonds
-    await KP3R.activate(KP3R.address);
+  // it("Prepare keeper", async () => {
+  //   //Bond 250 tokens
+  //   await KP3R.bond(KP3R.address, Web3.utils.toWei("250", "ether"));
+  //   //Advance 3 days
+  //   await helper.advanceTimeAndBlock(259200);
+  //   //Activate RLR bonds
+  //   await KP3R.activate(KP3R.address);
 
-    //Check owner is keeper
-    assert(KP3R.keepers(await KP3R.governance()));
-  });
+  //   //Check owner is keeper
+  //   assert(KP3R.keepers(await KP3R.governance()));
+  // });
   it("Send target KP3R to Pool", async () => {
     //Approve first
     await KP3R.approve(
@@ -171,20 +171,7 @@ contract("WrappedKeep3rRelayer", async function () {
     // assert (totalCost/ourProfit < totalCost1/proxyContractprofit,`We are more profitable by ${relDiff((totalCost1/proxyContractprofit),(totalCost/ourProfit))}`)
     */
   });
-  it("Direct MetaKeep3r Job execution", async () => {
-    const currentETHBalance = await web3.eth.getBalance(owner);
-    //first get encoded bytes to call to metakeep3r,then call it to wrapped relayer
-    //Metakeep3r call
-    await MockMetaKeep3rD.work(MockJobD.address);
-    const afterETHBalance = await web3.eth.getBalance(owner);
-    assert(
-      afterETHBalance > currentETHBalance,
-      `ETH Balance hasn't increased : ${
-        afterETHBalance - currentETHBalance / 1e18
-      } ETH diff`
-    );
-  })
-  
+
   it("Proxy MetaKeep3r Job execution", async () => {
     const currentETHBalance = await web3.eth.getBalance(WrappedKeep3rRelayerD.address);
     const workCall = MockJobD.contract.methods.work().encodeABI();
