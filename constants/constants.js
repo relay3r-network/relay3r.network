@@ -9,6 +9,9 @@ const Addrs = {
   GetBackETHHelperV2: {
     1: "0x86FC7820eF00ef076d8B89877434E58AfD8cB0C2",
   },
+  SYNL: {
+    1:"0xA6D84dce85c457d28A971f858967002BFDe74c1c",
+  },
   BACFarmer: {
     1: "0x145A958CAF8c11F76cEcFF74fE9bc98fc4e77402",
   },

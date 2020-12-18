@@ -24,6 +24,7 @@ const CoreFlashArbRelayerV3 = artifacts.require("CoreFlashArbRelayerV3");
 const GetBackETHRelayer = artifacts.require("GetBackETHRelayer");
 const BACFarmerRelayer = artifacts.require("BACFarmerRelayerv3");
 const RelayerV1OracleCustom = artifacts.require("RelayerV1OracleCustom");
+const SynlRebalancer = artifacts.require("SynlRebalancer");
 
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
@@ -42,9 +43,10 @@ const DeployGBETHJob = false;
 const DeployBACFarmerJob = false;
 const DeployLiqMiner = false;
 const DeployCHIJobs = false;
-const DeployRelayerV1Oracle = true;
+const DeployRelayerV1Oracle = false;
 const DeployNewHelper = false;
 const testLiqMinerPhase = false;
+const DeploySynlRebalancer = true;
 
 module.exports = async function (deployer) {
   // Deploy token with library
@@ -444,4 +446,31 @@ module.exports = async function (deployer) {
     const helperNew = await Keep3rV1HelperNewCustom.deployed();
     await RelayerTokenD.setKeep3rHelper(helperNew.address);
   }
+
+  else if (DeploySynlRebalancer) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+      Addrs.Keep3rV1JobRegistry[1]
+    );
+    await RelayerTokenD.removeJob("0xb688E3d0C99cFBbbEB018CB8e67DA65ac6Ec54d6");
+    //Deploy SynlRebalancer
+    await deployer.deploy(SynlRebalancer,Addrs.RLRToken[1],Addrs.SYNL[1]);
+
+    const SynlRebalancerJob = await SynlRebalancer.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(SynlRebalancerJob.address);
+    //Add 200 RLR on SynlRebalancer Job
+    await RelayerTokenD.addRLRCredit(
+      SynlRebalancerJob.address,
+      Web3.utils.toWei("200", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      SynlRebalancerJob.address,
+      "SynlRebalancer",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/SynlRebalancerJob.js"
+    );
+  }
+
 };
