@@ -25,7 +25,7 @@ const GetBackETHRelayer = artifacts.require("GetBackETHRelayer");
 const BACFarmerRelayer = artifacts.require("BACFarmerRelayerv3");
 const RelayerV1OracleCustom = artifacts.require("RelayerV1OracleCustom");
 const SynlRebalancer = artifacts.require("SynlRebalancer");
-
+const TrinityAlchemizer = artifacts.require("TrinityAlchemizer");
 //LP contracts
 // const GetRL3RLPs = artifacts.require("GetRelay3rLPTokens");
 // const TokenHelper = artifacts.require("TokenHelper");
@@ -46,7 +46,8 @@ const DeployCHIJobs = false;
 const DeployRelayerV1Oracle = false;
 const DeployNewHelper = false;
 const testLiqMinerPhase = false;
-const DeploySynlRebalancer = true;
+const DeploySynlRebalancer = false;
+const DeployTrinityAlchemizer = true;
 
 module.exports = async function (deployer) {
   // Deploy token with library
@@ -452,7 +453,6 @@ module.exports = async function (deployer) {
     const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
       Addrs.Keep3rV1JobRegistry[1]
     );
-    await RelayerTokenD.removeJob("0xb688E3d0C99cFBbbEB018CB8e67DA65ac6Ec54d6");
     //Deploy SynlRebalancer
     await deployer.deploy(SynlRebalancer,Addrs.RLRToken[1],Addrs.SYNL[1]);
 
@@ -472,5 +472,27 @@ module.exports = async function (deployer) {
       "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/SynlRebalancerJob.js"
     );
   }
-
+  else if (DeployTrinityAlchemizer) {
+    const RelayerTokenD = await Relay3rV2.at(Addrs.RLRToken[1]);
+    const KeeperJobRegistryD = await Keep3rV1JobRegistry.at(
+      Addrs.Keep3rV1JobRegistry[1]
+    );
+    //Deploy TrinityAlchemizer
+    await deployer.deploy(TrinityAlchemizer,Addrs.RLRToken[1]);
+    const TrinityAlchemizerJob = await TrinityAlchemizer.deployed();
+    //Add to jobs on keeper token
+    await RelayerTokenD.addJob(TrinityAlchemizerJob.address);
+    //Add 200 RLR on TrinityAlchemizer Job
+    await RelayerTokenD.addRLRCredit(
+      TrinityAlchemizerJob.address,
+      Web3.utils.toWei("200", "ether")
+    );
+    //Add to registry
+    await KeeperJobRegistryD.add(
+      TrinityAlchemizerJob.address,
+      "TrinityAlchemizer",
+      "",
+      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/TrinityAlchemizerJob.js"
+    );
+  }
 };
