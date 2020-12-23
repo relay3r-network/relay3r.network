@@ -34,7 +34,6 @@ const Addrs = require("../constants/constants").Addrs;
 
 /* Various deploy stages */
 const InitialDeployWithMigrator = false;
-const TestMigrator = false;
 const DeployLiqMigrator = false;
 const DeployLegacyHelper = false;
 const DeployNewCoreJob = false;
@@ -159,42 +158,6 @@ module.exports = async function (deployer) {
     //   YearnV1EarnKeep3rJob.address,
     //   Web3.utils.toWei("10", "ether")
     // );
-  } else if (TestMigrator) {
-    //Deploy TokenMigrator
-    await deployer.deploy(TokenMigrator);
-    const TokenMigratorD = await TokenMigrator.deployed();
-
-    ///Now deploy test token 1
-    await deployer.deploy(BurnableToken, "TestToken1", "TXS");
-    const Token1 = await BurnableToken.deployed();
-    await deployer.deploy(BurnableToken, "TestToken2", "TXSS");
-    const Token2 = await BurnableToken.deployed();
-
-    await TokenMigratorD.SetOriginToken(Token1.address);
-    await TokenMigratorD.SetSwapToken(Token2.address);
-
-    //Now transfer 1k tokens of token2 to migrator
-    await Token2.transfer(
-      TokenMigratorD.address,
-      Web3.utils.toWei("1000", "ether")
-    );
-    //Approve 1k tokens to migrator contract
-    await Token1.approve(
-      TokenMigratorD.address,
-      Web3.utils.toWei("1000", "ether")
-    );
-    //Swap 1k tokens to token2
-    // await TokenMigratorD.unpauseSwap();
-    await TokenMigratorD.swapTokens(Web3.utils.toWei("1000", "ether"));
-
-    const Token1SupplyAfterMigrate = await Token1.totalSupply();
-    const Token2SupplyAfterMigrate = await Token2.totalSupply();
-
-    //Check if migration was successful
-    console.log(Token1SupplyAfterMigrate.toString() === "0"); //Supply of token 1 to be 0 after migration
-    console.log(
-      Token2SupplyAfterMigrate.toString() === "1000000000000000000000"
-    ); //supply of token 2 to be 1k after migration
   } else if (DeployLiqMigrator) {
     await deployer.deploy(LiqMigratorNew);
   } else if (DeployLegacyHelper) {

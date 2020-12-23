@@ -1280,8 +1280,10 @@ contract Relay3rV2 is ReentrancyGuard {
     function transferKeeperRight(address bonding,address from,address to,uint256 bondAmount) public {
         //Removed dokeeperRightChecks and put it here
         require(isKeeper(from));
+        //Check caller or caller allowances
         require(msg.sender == from || KeeperAllowances[from][msg.sender][bonding] >= bondAmount);
-
+        //Check the bond amount
+        require(bondAmount <= bonds[from][bonding]);
         doDataInit(to);
 
         bool fullTransfer = bondAmount == bonds[from][bonding];
