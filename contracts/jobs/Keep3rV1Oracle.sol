@@ -5,8 +5,8 @@ pragma experimental ABIEncoderV2;
 import '../libraries/FixedPoint.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/utils/Address.sol';
 //Import uniswap files
 import '../interfaces/Uniswap/IUniswapV2Factory.sol';
 import '../interfaces/Uniswap/IUniswapV2Pair.sol';
@@ -30,6 +30,10 @@ interface IKeep3rV1Plus is IKeep3rV1Mini {
     function KPRH() external view returns (IKeep3rV1Helper);
 }
 
+interface IOracle {
+    function pairs() external view returns (address[] memory);
+}
+
 // sliding oracle that uses observations collected to provide moving price averages in the past
 //Forked from Keep3rV1Oracle with improvements
 contract RelayerV1OracleCustom is Ownable {
@@ -40,6 +44,9 @@ contract RelayerV1OracleCustom is Ownable {
     uint public CHIFEE = 5000;
     //Fee at 10%,can be adjusted to send excess to deployer
     uint public DFEE = 1000;
+    /// @notice Reduce RLR rewards by a factor of 20% initially,can be changed by owner
+    uint public RDEC = 2000;
+
     uint constant public BASE = 10000;
 
     struct Observation {
@@ -65,6 +72,8 @@ contract RelayerV1OracleCustom is Ownable {
         CHI.freeFromUpTo(address(this), (gasSpent + 14154) / 41947);
 
         uint _reward = RLR.KPRH().getQuoteLimit(gasDiff);
+        //Reduce it via factor given
+        _reward = _reward.sub(getReduction(_reward));
         //Calculate chi budget
         uint chiBudget = getChiBudget(_reward);
         //Get RLR reward to address to swap
@@ -74,15 +83,24 @@ contract RelayerV1OracleCustom is Ownable {
         _reward = _swap(_reward,chiBudget);
         //Used to send excess eth
         uint256 _rewardAfterSub = _reward.sub(_reward.mul(DFEE).div(BASE));
-        msg.sender.transfer(_rewardAfterSub);
-        payable(owner()).transfer(address(this).balance);
+        Address.sendValue(payable(msg.sender),_rewardAfterSub);
+        Address.sendValue(payable(owner()),address(this).balance);
+    }
+
+    modifier onlyGovernance {
+        require(msg.sender == governance,"!governance");
+        _;
     }
 
     address public governance;
     address public pendingGovernance;
 
-    function getChiBudget(uint amount) public view returns (uint) {
+    function getChiBudget(uint amount) internal view returns (uint) {
         return amount.mul(CHIFEE).div(BASE);
+    }
+
+    function getReduction(uint amount) internal view returns (uint) {
+        return amount.mul(RDEC).div(BASE);
     }
 
     function setChiBudget(uint newBudget) public onlyOwner {
@@ -93,8 +111,11 @@ contract RelayerV1OracleCustom is Ownable {
         DFEE = newBudget;
     }
 
-    function setMinKeep(uint _keep) external {
-        require(msg.sender == governance, "setGovernance: !gov");
+    function setReduction(uint newRed) public onlyOwner {
+        RDEC = newRed;
+    }
+
+    function setMinKeep(uint _keep) external onlyGovernance {
         minKeep = _keep;
     }
 
@@ -102,8 +123,7 @@ contract RelayerV1OracleCustom is Ownable {
      * @notice Allows governance to change governance (for future upgradability)
      * @param _governance new governance address to set
      */
-    function setGovernance(address _governance) external {
-        require(msg.sender == governance, "setGovernance: !gov");
+    function setGovernance(address _governance) external onlyGovernance {
         pendingGovernance = _governance;
     }
 
@@ -173,14 +193,17 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     //Add pairs directly
-    function addPair(address pair) public {
-        require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
+    function addPair(address pair) public onlyGovernance {
         _addPair(pair);
     }
 
+    //Import pairs from a previous oracle contract
+    function importPairs(address oracle) public onlyGovernance {
+        batchAddPairs(IOracle(oracle).pairs());
+    }
+
     //Using upkeep to save on gas
-    function batchAddPairs(address[] memory pairsToAdd) public {
-        require(msg.sender == governance, "UniswapV2Oracle::add: !gov");
+    function batchAddPairs(address[] memory pairsToAdd) public onlyGovernance {
         for(uint i=0;i<pairsToAdd.length;i++)
             _addPair(pairsToAdd[i]);
     }

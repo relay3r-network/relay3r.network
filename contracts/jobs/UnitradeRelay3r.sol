@@ -6,9 +6,9 @@ import "../libraries/UniswapV2Library.sol";
 import "../interfaces/IUnitradeOrderbook.sol";
 import "../interfaces/IChi.sol";
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
-contract UnitradeExecutorRLRV6 is Ownable{
+contract UnitradeExecutorRLRV7 is Ownable{
 
-    UnitradeInterface iUniTrade = UnitradeInterface(
+    UnitradeInterface public iUniTrade = UnitradeInterface(
         0xC1bF1B4929DA9303773eCEa5E251fDEc22cC6828
     );
 
@@ -23,12 +23,12 @@ contract UnitradeExecutorRLRV6 is Ownable{
     iCHI public CHI = iCHI(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
 
     mapping(address => bool) public tokenOutSkip;
+    mapping(address => bool) public tokenInSkip;
+    mapping(uint => bool) public orderSkip;
 
 
     constructor(address keepertoken) public {
         RLR = IKeep3rV1Mini(keepertoken);
-        //Add hype token to tokenoutskip
-        addSkipTokenOut(0x610c67be018A5C5bdC70ACd8DC19688A11421073);
         require(CHI.approve(address(this), uint256(-1)));
     }
 
@@ -53,8 +53,15 @@ contract UnitradeExecutorRLRV6 is Ownable{
         payoutRLR = !payoutRLR;
     }
 
-    function addSkipTokenOut(address token) public onlyOwner {
-        tokenOutSkip[token] = true;
+    function toggleTokenOutSkip(address token) public onlyOwner {
+        tokenOutSkip[token] = !tokenOutSkip[token];
+    }
+
+    function toggleTokenInSkip(address token) public onlyOwner {
+        tokenInSkip[token] = !tokenInSkip[token];
+    }
+    function toggleOrder(uint orderid) public onlyOwner {
+        orderSkip[orderid] = !orderSkip[orderid];
     }
 
     function setMinKeep(uint _keep) public onlyOwner {
@@ -97,13 +104,15 @@ contract UnitradeExecutorRLRV6 is Ownable{
             OrderState orderState,
             bool deflationary
         ) = iUniTrade.getOrder(i);
-        address[] memory path = new address[](2);
-        path[0] = tokenIn;
-        path[1] = tokenOut;
 
         if(executorFee <= 0) return false;//Dont execute unprofitable orders
         if(deflationary && !TryDeflationaryOrders) return false;//Skip deflationary token orders as it is not supported atm
+        if(tokenInSkip[tokenIn]) return false;//Skip tokens that are set in mapping
         if(tokenOutSkip[tokenOut]) return false;//Skip tokens that are set in mapping
+
+        address[] memory path = new address[](2);
+        path[0] = tokenIn;
+        path[1] = tokenOut;
 
         uint256[] memory amounts = UniswapV2Library.getAmountsOut(
             iUniTrade.uniswapV2Factory(),
