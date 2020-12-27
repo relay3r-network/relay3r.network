@@ -4,8 +4,8 @@ pragma solidity ^0.6.12;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
-import '../interfaces/Yearn/IYERC20.sol';
+import '../../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import '../../interfaces/Yearn/IYERC20.sol';
 
 contract YearnV1EarnKeep3r {
     using SafeMath for uint;

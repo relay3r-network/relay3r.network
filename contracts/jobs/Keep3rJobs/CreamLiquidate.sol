@@ -7,11 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import '@openzeppelin/contracts/utils/Address.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
-import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import '../../interfaces/Keep3r/IKeep3rV1Mini.sol';
 //Import Cream interfaces
-import '../interfaces/Cream/ICERC20.sol';
-import '../interfaces/Cream/ICEther.sol';
-import '../interfaces/Cream/IComptroller.sol';
+import '../../interfaces/Cream/ICERC20.sol';
+import '../../interfaces/Cream/ICEther.sol';
+import '../../interfaces/Cream/IComptroller.sol';
 
 
 

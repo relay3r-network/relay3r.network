@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
-import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
-import '../interfaces/Sushiswap/ISushiswapV2Factory.sol';
-import '../interfaces/Sushiswap/ISushiswapV2Maker.sol';
-import '../interfaces/Sushiswap/ISushiswapV2Pair.sol';
+import '../../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import '../../interfaces/Sushiswap/ISushiswapV2Factory.sol';
+import '../../interfaces/Sushiswap/ISushiswapV2Maker.sol';
+import '../../interfaces/Sushiswap/ISushiswapV2Pair.sol';
 
 contract SushiswapV2Keep3r {
 

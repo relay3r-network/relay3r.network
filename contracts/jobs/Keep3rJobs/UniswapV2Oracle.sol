@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
-import '../interfaces/Uniswap/IUniswapV2Factory.sol';
-import '../interfaces/Uniswap/IUniswapV2Pair.sol';
-import '../libraries/UniswapV2OracleLibrary.sol';
-import '../libraries/UniswapV2Library.sol';
-import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import '../../interfaces/Uniswap/IUniswapV2Factory.sol';
+import '../../interfaces/Uniswap/IUniswapV2Pair.sol';
+import '../../libraries/UniswapV2OracleLibrary.sol';
+import '../../libraries/UniswapV2Library.sol';
+import '../../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
 

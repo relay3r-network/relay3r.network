@@ -12,21 +12,21 @@ import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
 import '@openzeppelin/contracts/math/Math.sol';
 
-import "../interfaces/Keep3r/IKeep3rV1Mini.sol";
+import "../../interfaces/Keep3r/IKeep3rV1Mini.sol";
 
 
 //Import Cream interfaces
-import '../interfaces/Cream/ICERC20.sol';
-import '../interfaces/Cream/ICEther.sol';
-import '../interfaces/Cream/IComptroller.sol';
+import '../../interfaces/Cream/ICERC20.sol';
+import '../../interfaces/Cream/ICEther.sol';
+import '../../interfaces/Cream/IComptroller.sol';
 //Import Uniswap interfaces
-import '../interfaces/Uniswap/IUniswapV2Pair.sol';
+import '../../interfaces/Uniswap/IUniswapV2Pair.sol';
 
-import '../interfaces/Uniswap/IUniswapV2Router.sol';
+import '../../interfaces/Uniswap/IUniswapV2Router.sol';
 
-import '../interfaces/Uniswap/IUniswapV2Factory.sol';
+import '../../interfaces/Uniswap/IUniswapV2Factory.sol';
 
-import '../interfaces/Uniswap/IWETH.sol';
+import '../../interfaces/Uniswap/IWETH.sol';
 
 
 contract CreamFlashLiquidate {

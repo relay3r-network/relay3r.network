@@ -10,7 +10,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
-import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
+import '../../interfaces/Keep3r/IKeep3rV1Mini.sol';
 
 interface IAave {
     function liquidationCall(
