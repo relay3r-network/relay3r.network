@@ -6,8 +6,8 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
 interface ITokenMigrator {
-  function RL3R (  ) external view returns ( address );
-  function RLR (  ) external view returns ( address );
+  function OriginToken (  ) external view returns ( address );
+  function DestToken (  ) external view returns ( address );
   function owner (  ) external view returns ( address );
   function pauseSwap (  ) external;
   function recoverERC20 ( address tokenAddress ) external;
@@ -23,22 +23,22 @@ contract LiqMigratorNew is Ownable{
 
     address UniRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
     address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    //Contract that swaps rl3r to rlr
-    address RLRSwapper = 0x9BA7df487877A7E216856FBEeD93CE5920722cCa;
-    address LPPairRL3R = 0xc930Fedc53A8426203C9203079CA76D49f65b964;
-    address TimeLockContract = 0x4cB704CAdD196d0d0aFc84aAd7f9DddE407c5aB5;
-
+    address LPPairOriginToken;
     IUniswapV2Router  public  uniswapInterface = IUniswapV2Router(UniRouter);
+    ITokenMigrator public tokenMigrator;
 
-    ITokenMigrator public tokenMigrator = ITokenMigrator(RLRSwapper);
+    constructor (address tokenMigratoraddr,address LPPair) public {
+        tokenMigrator = ITokenMigrator(tokenMigratoraddr);
+        LPPairOriginToken = LPPair;
+    }
 
     function removeETHLiquidityFromToken() public onlyOwner {
         //Approve token and lp token to be spent
-         IERC20(tokenMigrator.RL3R()).approve(UniRouter,getTokenBalance(tokenMigrator.RL3R()));
-         IERC20(LPPairRL3R).approve(UniRouter,getTokenBalance(LPPairRL3R));
+         IERC20(tokenMigrator.OriginToken()).approve(UniRouter,getTokenBalance(tokenMigrator.OriginToken()));
+         IERC20(LPPairOriginToken).approve(UniRouter,getTokenBalance(LPPairOriginToken));
 
         // remove liquidity
-        uniswapInterface.removeLiquidityETH(tokenMigrator.RL3R(), getTokenBalance(LPPairRL3R), 1, 1, address(this), now + 20);
+        uniswapInterface.removeLiquidityETH(tokenMigrator.OriginToken(), getTokenBalance(LPPairOriginToken), 1, 1, address(this), now + 20);
     }
 
     receive() external payable {
@@ -47,22 +47,22 @@ contract LiqMigratorNew is Ownable{
         }
     }
 
-    function SwapRL3RToRLR() public onlyOwner {
+    function SwapTokens() public onlyOwner {
         //Approve spend of rl3r tokens by swapper contact
-        IERC20(tokenMigrator.RL3R()).approve(RLRSwapper,getTokenBalance(tokenMigrator.RL3R()));
+        IERC20(tokenMigrator.OriginToken()).approve(address(tokenMigrator),getTokenBalance(tokenMigrator.OriginToken()));
         //Swap it
-        tokenMigrator.swapTokens(getTokenBalance(tokenMigrator.RL3R()));
+        tokenMigrator.swapTokens(getTokenBalance(tokenMigrator.OriginToken()));
     }
 
-    function AddLiqRLR() public onlyOwner {
-        uint256 tokenBalance = getTokenBalance(tokenMigrator.RLR());
+    function AddLiq() public onlyOwner {
+        uint256 tokenBalance = getTokenBalance(tokenMigrator.DestToken());
         //Approve uniswap router to spend token and weth
-        IERC20(tokenMigrator.RLR()).approve(UniRouter,tokenBalance);
+        IERC20(tokenMigrator.DestToken()).approve(UniRouter,tokenBalance);
 
         uniswapInterface.addLiquidityETH
         {value : address(this).balance }
         (
-            tokenMigrator.RLR(),
+            tokenMigrator.DestToken(),
             tokenBalance,
             tokenBalance,
             address(this).balance,
@@ -81,8 +81,8 @@ contract LiqMigratorNew is Ownable{
 
     function MigrateLiq() public onlyOwner{
         removeETHLiquidityFromToken();
-        SwapRL3RToRLR();
-        AddLiqRLR();
+        SwapTokens();
+        AddLiq();
         //Finally unpause the swap contract
         tokenMigrator.unpauseSwap();
     }

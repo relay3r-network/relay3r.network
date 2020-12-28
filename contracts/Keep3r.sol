@@ -490,7 +490,7 @@ interface IKeep3rV1Helper {
 // File: contracts/Keep3r.sol
 
 pragma solidity ^0.6.6;
-contract Relay3rV2 is ReentrancyGuard {
+contract Relay3rV3 is ReentrancyGuard {
     using SafeMath for uint;
     using SafeERC20 for IERC20;
 
@@ -498,7 +498,7 @@ contract Relay3rV2 is ReentrancyGuard {
     IKeep3rV1Helper public KPRH;
 
     /// @notice EIP-20 token name for this token
-    string public constant name = "Relayer";
+    string public constant name = "RelayerV3";
 
     /// @notice EIP-20 token symbol for this token
     string public constant symbol = "RLR";

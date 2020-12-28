@@ -3,7 +3,7 @@ const helper = require("./helpers/truffleTestHelper");
 
 //Core contracts
 const Keep3rV1Library = artifacts.require("Keep3rV1Library");
-const Relay3rV2 = artifacts.require("Relay3rV2");
+const Relay3rV3 = artifacts.require("Relay3rV3");
 const Keep3rV1HelperMock = artifacts.require("Keep3rV1HelperMock");
 //Jobs
 const WrappedKeep3rRelayer = artifacts.require("WrappedKeep3rRelayer");
@@ -32,8 +32,8 @@ contract("WrappedKeep3rRelayer", async function () {
     owner = accounts[0];
     // Deploy RLR
     kp3rlib = await Keep3rV1Library.new();
-    await Relay3rV2.link("Keep3rV1Library", kp3rlib.address);
-    RLR = await Relay3rV2.new();
+    await Relay3rV3.link("Keep3rV1Library", kp3rlib.address);
+    RLR = await Relay3rV3.new();
     assert(RLR.address !== "");
     //Mint initial supply for us
     await RLR.mint(Web3.utils.toWei("20000", "ether"));
@@ -46,8 +46,8 @@ contract("WrappedKeep3rRelayer", async function () {
   it("Deploy KP3R", async () => {
     //Deploy KP3r
     kp3rlibn = await Keep3rV1Library.new();
-    await Relay3rV2.link("Keep3rV1Library", kp3rlibn.address);
-    KP3R = await Relay3rV2.new();
+    await Relay3rV3.link("Keep3rV1Library", kp3rlibn.address);
+    KP3R = await Relay3rV3.new();
     //Mint initial supply for us
     await KP3R.mint(Web3.utils.toWei("20000", "ether"));
     //Deploy and set helper

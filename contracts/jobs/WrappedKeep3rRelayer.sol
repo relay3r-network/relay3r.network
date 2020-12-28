@@ -52,7 +52,6 @@ contract WrappedKeep3rRelayer is Ownable, ERC20, ReentrancyGuard {
     uint256 totalKP3RRewardsBalance = 0;
     uint256 totalKP3RRewardsPaid = 0;
     mapping (address => uint256) public deposits;
-    // mapping (address => uint256) public shares;
 
     //Taken from yearn vault code
     constructor(address _token, address _tokenrlr)
