@@ -18,7 +18,7 @@
  *
  */
 
-const { mnemonic, InfuraProjID } = require("./secrets.json");
+const { mnemonic, InfuraProjID , EtherscanAPIKey } = require("./secrets.json");
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 // const infuraKey = "fj4jll3k.....";
 //
@@ -63,6 +63,8 @@ module.exports = {
         ),
       // port: 80,
       network_id: 1, // Ethereum public network
+      gasPrice: 51e9,//51 gwei
+      skipDryRun: true
       // optional config values:
       // gasPrice
       // from - default address to use for any transaction Truffle makes during migrations
@@ -78,7 +80,12 @@ module.exports = {
   mocha: {
     // timeout: 100000
   },
-
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+  api_keys: {
+    etherscan: EtherscanAPIKey
+  },
   // Configure your compilers
   compilers: {
     solc: {
