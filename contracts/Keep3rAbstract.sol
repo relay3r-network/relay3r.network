@@ -14,7 +14,6 @@ contract Keep3r {
   }
 
   function _setKeep3r(address _keep3r) internal {
-    // require(keccak256(bytes(IKeep3rV1(_keep3r).name())) == keccak256(bytes('Keep3rV1')), 'pool-keeper::set-keep3r:not-keep3r');
     keep3r = IKeep3rV1(_keep3r);
   }
 

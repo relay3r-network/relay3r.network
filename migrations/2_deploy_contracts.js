@@ -157,7 +157,6 @@ module.exports = async function (deployer) {
 
     await TokenMigratorD.SetOriginToken(Addrs.RLRToken[1]);
     await TokenMigratorD.SetSwapToken(RelayerTokenD.address);
-    await TokenMigratorD.setBurn(true);
     //Now send supply of relayer tokens to migrator
     await RelayerTokenD.transfer(
       TokenMigratorD.address,

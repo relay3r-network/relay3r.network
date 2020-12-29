@@ -365,10 +365,6 @@ contract Governance {
         KPR.resolve(keeper);
     }
 
-    function setLiquidityFee(uint newFee) external onlyGuardian {
-        KPR.setLiquidityFee(newFee);
-    }
-
     function setBondingDelay(uint256 newDelay) external onlyGuardian {
         KPR.setBondingDelay(newDelay);
     }

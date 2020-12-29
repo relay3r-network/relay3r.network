@@ -472,11 +472,9 @@ library Keep3rV1Library {
 }
 
 interface IUniswapV2Pair {
-    function factory() external view returns (address);
     function token0() external view returns (address);
     function token1() external view returns (address);
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-
 }
 
 interface IGovernance {
@@ -900,14 +898,6 @@ contract Relay3rV3 is ReentrancyGuard {
      */
     function revokeLiquidity(address liquidity) external onlyGovernance{
         liquidityAccepted[liquidity] = false;
-    }
-
-    /**
-     * @notice Set new liquidity fee from governance
-     * @param newFee the new fee for further liquidity adds
-     */
-    function setLiquidityFee(uint newFee) external onlyGovernance{
-        FEE = newFee;
     }
 
     /**
