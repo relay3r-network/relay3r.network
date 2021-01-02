@@ -12,15 +12,13 @@ var TokenMigratorD;
 
 contract("TokenMigratorCustomizable", async function () {
     it("Should Migrate tokens to V2", async () => {
-    //Deploy TokenMigrator
-    TokenMigratorD = await TokenMigrator.new();
-    assert(TokenMigratorD.address !== '');
-    ///Now deploy test token 1
+
+    ///Deploy test tokens
      Token1 = await BurnableToken.new("TestToken1", "TXS");
      Token2 = await BurnableToken.new("TestToken2", "TXSS");
-     //Set swap and origin tokens
-     await TokenMigratorD.SetOriginToken(Token1.address);
-     await TokenMigratorD.SetSwapToken(Token2.address);
+    //Deploy TokenMigrator
+    TokenMigratorD = await TokenMigrator.new(Token1.address, Token2.address);
+    assert(TokenMigratorD.address !== '');
 
     //Now transfer 1k tokens of token2 to migrator
     await Token2.transfer(

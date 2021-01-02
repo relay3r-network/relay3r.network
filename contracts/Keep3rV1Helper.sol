@@ -13,15 +13,18 @@ contract Keep3rV1HelperNewCustom is Ownable{
     using SafeMath for uint;
 
     IChainLinkFeed public constant FASTGAS = IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
-    IKeep3rV1Mini public RLR = IKeep3rV1Mini(0x5b3F693EfD5710106eb2Eac839368364aCB5a70f);
-    IUniswapV2SlidingOracle public UV2SO = IUniswapV2SlidingOracle(0xA54b8DFB9B14357BF9BF8209Cb4fCe74BFeC660F);
+    IKeep3rV1Mini public RLR;
+    IUniswapV2SlidingOracle public UV2SO;
     address public constant WETH = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
     uint constant public MAX = 11;
     uint constant public BASE = 10;
     uint constant public SWAP = 300000;
     uint constant public TARGETBOND = 200e18;
-
+    constructor (address rlrtoken,address oracle) public {
+        RLR   = IKeep3rV1Mini(rlrtoken);
+        UV2SO = IUniswapV2SlidingOracle(oracle);
+    }
     function quote(uint eth) public view returns (uint) {
         return UV2SO.current(address(WETH), eth, address(RLR));
     }

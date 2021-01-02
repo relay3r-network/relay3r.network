@@ -46,13 +46,14 @@ module.exports = {
     },
     /*
     development: {
-      host: "localhost",
       provider: () =>
       new HDWalletProvider(
         mnemonic,
-        `http://localhost:8545/`
+        `http://localhost:8545`
       ),
-      network_id: "5777"
+      network_id: 1,
+      gasPrice:100e9,//51 gwei
+      skipDryRun: true
     },
     */
         live: {
@@ -63,8 +64,9 @@ module.exports = {
         ),
       // port: 80,
       network_id: 1, // Ethereum public network
-      gasPrice: 51e9,//51 gwei
-      skipDryRun: true
+      gasPrice: 100e9,//51 gwei
+      skipDryRun: true,
+      timeoutBlocks : 20000
       // optional config values:
       // gasPrice
       // from - default address to use for any transaction Truffle makes during migrations

@@ -24,6 +24,11 @@ contract TokenMigratorCustomizable is Ownable{
     IToken public OriginToken = IToken(address(0));
     IToken public DestToken = IToken(address(0));
 
+    constructor(address origin,address dest) public{
+        OriginToken = IToken(origin);
+        DestToken = IToken(dest);
+    }
+
     function SetOriginToken(address token) public onlyOwner{
         OriginToken = IToken(token);
     }

@@ -61,25 +61,13 @@ module.exports = async function (deployer) {
     //Mint initial supply
     await RelayerTokenD.mint(InitiaLSupply); //94,538 RLR
 
-    //Deploy helper
-    await deployer.deploy(Keep3rV1HelperLegacyV1);
-    const keeperHelperD = await Keep3rV1HelperLegacyV1.deployed();
-    // console.log(`KEEPER HELPER IS ${keeperHelperD.address}`);
-    await keeperHelperD.setToken(RelayerTokenD.address);
-    //Set helper on keeper token
-    await RelayerTokenD.setKeep3rHelper(keeperHelperD.address);
-/*
     //Deploy RelayerV1OracleCustom
     await deployer.deploy(RelayerV1OracleCustom, RelayerTokenD.address);
     const RelayerV1OracleCustomJob = await RelayerV1OracleCustom.deployed();
-    //Add to jobs on keeper token
-    await RelayerTokenD.addJob(RelayerV1OracleCustomJob.address);
-*/
+
     //Deploy UnitradeJob
     await deployer.deploy(UnitradeExecutorRLRV7, RelayerTokenD.address);
     const UnitradeJob = await UnitradeExecutorRLRV7.deployed();
-    //Add to jobs on keeper token
-    await RelayerTokenD.addJob(UnitradeJob.address);
 
     //Deploy GetBackETHRelayer
     await deployer.deploy(
@@ -89,28 +77,14 @@ module.exports = async function (deployer) {
     );
     const GetBackETHRelayerJob = await GetBackETHRelayer.deployed();
     //Add to jobs on keeper token
+    await RelayerTokenD.addJob(RelayerV1OracleCustomJob.address);
+    await RelayerTokenD.addJob(UnitradeJob.address);
     await RelayerTokenD.addJob(GetBackETHRelayerJob.address);
-    //Add 1 RLR on UnitradeExecutorRLRV7 Job
-    await RelayerTokenD.addRLRCredit(
-      GetBackETHRelayerJob.address,
-      Web3.utils.toWei("50", "ether")
-    );
-/*
-    //Deploy CoreFlashArbRelay3r
-    await deployer.deploy(
-      CoreFlashArbRelayerV3,
-      RelayerTokenD.address,
-      Addrs.CoreFlashArb[1],
-      Addrs.CoreToken[1]
-    );
-    const CoreFlashArbRelayerV3 = await CoreFlashArbRelayerV3.deployed();
-    //Add to jobs on keeper token
-    await RelayerTokenD.addJob(CoreFlashArbRelayerV3.address);
-*/
+
     //Deploy keeper job registry
     await deployer.deploy(Keep3rV1JobRegistry);
     const KeeperJobRegistryD = await Keep3rV1JobRegistry.deployed();
-/*
+
     //Add job data
     await KeeperJobRegistryD.add(
       RelayerV1OracleCustomJob.address,
@@ -118,7 +92,7 @@ module.exports = async function (deployer) {
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/RelayerV1OracleJob.js"
     );
-*/
+
     //Add to registry
     await KeeperJobRegistryD.add(
       GetBackETHRelayerJob.address,
@@ -132,31 +106,31 @@ module.exports = async function (deployer) {
       "",
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/unitraderelay3r.js"
     );
-/*
-    await KeeperJobRegistryD.add(
-      CoreFlashArbRelayerV3.address,
-      "CoreFlashArbRelayerV3",
-      "",
-      "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/coreflasharbrelay3r.js"
-    );
-*/
+
     //Add 5 RLR on Unitrade Job
     await RelayerTokenD.addRLRCredit(
       UnitradeJob.address,
-      Web3.utils.toWei("5", "ether")
+      Web3.utils.toWei("150", "ether")
     );
     //Add 12 RLR on GetBackETHRelayerJob Job
     await RelayerTokenD.addRLRCredit(
       GetBackETHRelayerJob.address,
-      Web3.utils.toWei("15", "ether")
+      Web3.utils.toWei("150", "ether")
+    );
+    //Add 50 RLR on RelayerV1OracleCustom Job
+    await RelayerTokenD.addRLRCredit(
+      RelayerV1OracleCustomJob.address,
+      Web3.utils.toWei("50", "ether")
     );
 
-    //Deploy migrator
-    await deployer.deploy(TokenMigrator);
-    const TokenMigratorD = await TokenMigrator.deployed();
+    //Deploy helper
+    await deployer.deploy(Keep3rV1HelperNewCustom,RelayerTokenD.address, RelayerV1OracleCustomJob.address);
+    const helperNew = await Keep3rV1HelperNewCustom.deployed();
+    await RelayerTokenD.setKeep3rHelper(helperNew.address);
 
-    await TokenMigratorD.SetOriginToken(Addrs.RLRToken[1]);
-    await TokenMigratorD.SetSwapToken(RelayerTokenD.address);
+    //Deploy migrator
+    await deployer.deploy(TokenMigrator, Addrs.RLRToken[1], RelayerTokenD.address);
+    const TokenMigratorD = await TokenMigrator.deployed();
     //Now send supply of relayer tokens to migrator
     await RelayerTokenD.transfer(
       TokenMigratorD.address,
@@ -167,6 +141,7 @@ module.exports = async function (deployer) {
     const LiqMigratorD = await LiqMigratorNew.deployed();
     //Transfer ownership of the migrator to liqmigrator
     await TokenMigratorD.transferOwnership(LiqMigratorD.address);
+
   } else if (DeployLegacyHelper) {
     const RelayerTokenD = await Relay3rV3.at(Addrs.RLRToken[1]);
     await deployer.deploy(Keep3rV1HelperLegacyV1);
@@ -391,7 +366,7 @@ module.exports = async function (deployer) {
     // await RelayerTokenD.removeJob("0xd5Cf1Cc695226B2243d7416Ec1B478577c50f2aF");
 
     //Deploy RelayerV1OracleCustom
-    await deployer.deploy(RelayerV1OracleCustom);
+    await deployer.deploy(RelayerV1OracleCustom, RelayerTokenD.address);
 
     const RelayerV1OracleJob = await RelayerV1OracleCustom.deployed();
     //Add to jobs on keeper token
@@ -413,7 +388,7 @@ module.exports = async function (deployer) {
     //await RelayerTokenD.setKeep3rHelper(helperNew.address);
   } else if (DeployNewHelper) {
     const RelayerTokenD = await Relay3rV3.at(Addrs.RLRToken[1]);
-    await deployer.deploy(Keep3rV1HelperNewCustom);
+    await deployer.deploy(Keep3rV1HelperNewCustom,RelayerTokenD.address, Addrs.UniRLROracle[1]);
     const helperNew = await Keep3rV1HelperNewCustom.deployed();
     await RelayerTokenD.setKeep3rHelper(helperNew.address);
   }
