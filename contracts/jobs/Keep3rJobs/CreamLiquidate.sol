@@ -2,10 +2,7 @@
 pragma solidity ^0.6.12;
 
 //Import openzepplin libraries and interfaces
-import '@openzeppelin/contracts/math/SafeMath.sol';
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
+import { SafeERC20, SafeMath, IERC20 } from "../../libraries/SafeERC20.sol";
 
 import '../../interfaces/Keep3r/IKeep3rV1Mini.sol';
 //Import Cream interfaces

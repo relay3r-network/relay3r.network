@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../libraries/TransferHelper.sol";
 import "../interfaces/Keep3r/IKeep3rV1Mini.sol";
 
-interface iKeep3r is IKeep3rV1Mini ,IERC20 {
+interface iKeep3r is IKeep3rV1Mini , IERC20 {
     function bondings ( address, address ) external view returns ( uint256 );
     function workCompleted ( address ) external view returns ( uint256 );
     function jobs ( address ) external view returns ( bool );

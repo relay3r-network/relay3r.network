@@ -180,7 +180,7 @@ contract REPL {
 	// function run() public {
 	//     run(this.repl).withCaller(0x9f6FdC2565CfC9ab8E184753bafc8e94C0F985a0);
 	// }
-
+/*
     function repl() external {
         uint sp = 16199;
         uint st = 16000;
@@ -194,4 +194,5 @@ contract REPL {
         // fmt.printf("cdf=%d\n",abi.encode(cdf));
         // fmt.printf("FIXED_1=%u\n",abi.encode(FIXED_1));
     }
+    */
 }

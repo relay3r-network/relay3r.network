@@ -44,7 +44,7 @@ contract GetRelay3rLPTokens{
     function DoApprove() internal {
         doInfiniteApprove(Relay3rInterface);
         doInfiniteApprove(pairInterface);
-        doInfiniteApprove(wethInterface);
+        doInfiniteApprove(IERC20(address(wethInterface)));
     }
 
     function GetRelay3rBalance() public view returns (uint256){

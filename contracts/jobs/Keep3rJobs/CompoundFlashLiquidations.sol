@@ -2,14 +2,7 @@
 pragma solidity ^0.6.12;
 
 
-import '@openzeppelin/contracts/math/SafeMath.sol';
-
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
-
-
+import { SafeERC20, IERC20 } from "../../libraries/SafeERC20.sol";
 import '@openzeppelin/contracts/math/Math.sol';
 import "../../interfaces/Keep3r/IKeep3rV1Mini.sol";
 // Cream and compound use the same codebase
