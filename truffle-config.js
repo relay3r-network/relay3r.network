@@ -42,6 +42,8 @@ module.exports = {
           mnemonic,
           `https://ropsten.infura.io/v3/${InfuraProjID}`
         ),
+        skipDryRun: true,
+
       network_id: 3, // Ropsten network
     },
     /*

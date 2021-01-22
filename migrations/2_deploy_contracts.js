@@ -2,6 +2,8 @@ var Web3 = require("web3");
 
 //Keeoer core contracts
 const Keep3rV1HelperLegacyV1 = artifacts.require("Keep3rV1HelperLegacyV1");
+const Keep3rV1HelperMock = artifacts.require("Keep3rV1HelperMock");
+
 const Keep3rV1Library = artifacts.require("Keep3rV1Library");
 const Relay3rV3 = artifacts.require("Relay3rV3");
 const Keep3rV1JobRegistry = artifacts.require("Keep3rV1JobRegistry");
@@ -47,6 +49,8 @@ const testLiqMinerPhase = false;
 const DeploySynlRebalancer = false;
 const DeployTrinityAlchemizer = false;
 const DeployLidoRelayer = false;
+const DeployOnRopsten = false;
+const DeployMockHelper =true;
 
 module.exports = async function (deployer) {
    // Deploy token with library
@@ -142,7 +146,29 @@ module.exports = async function (deployer) {
     //Transfer ownership of the migrator to liqmigrator
     await TokenMigratorD.transferOwnership(LiqMigratorD.address);
 
-  } else if (DeployLegacyHelper) {
+  }
+  else if (DeployOnRopsten) {
+        //Deploy v3 token
+        await deployer.deploy(Keep3rV1Library);
+        await deployer.link(Keep3rV1Library, Relay3rV3);
+        await deployer.deploy(Relay3rV3);
+        const RelayerTokenD = await Relay3rV3.deployed();
+        const InitiaLSupply = Web3.utils.toWei("94538", "ether");
+        //Mint initial supply
+        await RelayerTokenD.mint(InitiaLSupply); //94,538 RLR
+        await deployer.deploy(Keep3rV1HelperLegacyV1);
+        KPRH = await Keep3rV1HelperLegacyV1.deployed();
+        await KPRH.setToken(RelayerTokenD.address);
+        await RelayerTokenD.setKeep3rHelper(KPRH.address);
+  }
+  else if (DeployMockHelper) {
+    const RelayerTokenD = await Relay3rV3.at("0xB9dF1319250AaE181B48ef0C04E698885b47d693");
+    await deployer.deploy(Keep3rV1HelperMock);
+    KPRH = await Keep3rV1HelperMock.deployed();
+    await KPRH.setToken("0xB9dF1319250AaE181B48ef0C04E698885b47d693");
+    await RelayerTokenD.setKeep3rHelper(KPRH.address);
+  }
+  else if (DeployLegacyHelper) {
     const RelayerTokenD = await Relay3rV3.at(Addrs.RLRToken[1]);
     await deployer.deploy(Keep3rV1HelperLegacyV1);
     const keeperHelperD = await Keep3rV1HelperLegacyV1.deployed();
