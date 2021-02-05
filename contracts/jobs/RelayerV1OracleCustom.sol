@@ -15,10 +15,9 @@ import '../libraries/UniswapV2OracleLibrary.sol';
 import '../libraries/UniswapV2Library.sol';
 import '../interfaces/Uniswap/IWETH.sol';
 import '../interfaces/Uniswap/IUniswapV2Router.sol';
-//Import kp3r and chi interfaces
+//Import kp3r interfaces
 import '../interfaces/Keep3r/IKeep3rV1Helper.sol';
 import '../interfaces/Keep3r/IKeep3rV1Mini.sol';
-import "../interfaces/IChi.sol";
 
 interface IKeep3rV1Plus is IKeep3rV1Mini {
     function unbond(address bonding, uint amount) external;
@@ -40,8 +39,6 @@ contract RelayerV1OracleCustom is Ownable {
     using FixedPoint for *;
     using SafeMath for uint;
 
-    /// @notice CHI Cut fee at 50% initially
-    uint public CHIFEE = 5000;
     //Fee at 10%,can be adjusted to send excess to deployer
     uint public DFEE = 1000;
     /// @notice Reduce RLR rewards by a factor of 20% initially,can be changed by owner
@@ -69,18 +66,14 @@ contract RelayerV1OracleCustom is Ownable {
         //Gas calcs
         uint256 gasDiff = _gasUsed.sub(gasleft());
         uint256 gasSpent = 21000 + gasDiff + 16 * msg.data.length;
-        CHI.freeFromUpTo(address(this), (gasSpent + 14154) / 41947);
 
         uint _reward = RLR.KPRH().getQuoteLimit(gasDiff);
         //Reduce it via factor given
         _reward = _reward.sub(getReduction(_reward));
-        //Calculate chi budget
-        uint chiBudget = getChiBudget(_reward);
         //Get RLR reward to address to swap
-        RLR.receipt(address(RLR), address(this), _reward.add(chiBudget));
-
+        RLR.receipt(address(RLR), address(this), _reward);
         //Swap and return eth reward
-        _reward = _swap(_reward,chiBudget);
+        _reward = _swap(_reward);
         //Used to send excess eth
         uint256 _rewardAfterSub = _reward.sub(_reward.mul(DFEE).div(BASE));
         Address.sendValue(payable(msg.sender),_rewardAfterSub);
@@ -95,16 +88,8 @@ contract RelayerV1OracleCustom is Ownable {
     address public governance;
     address public pendingGovernance;
 
-    function getChiBudget(uint amount) internal view returns (uint) {
-        return amount.mul(CHIFEE).div(BASE);
-    }
-
     function getReduction(uint amount) internal view returns (uint) {
         return amount.mul(RDEC).div(BASE);
-    }
-
-    function setChiBudget(uint newBudget) public onlyOwner {
-        CHIFEE = newBudget;
     }
 
     function setDBudget(uint newBudget) public onlyOwner {
@@ -136,9 +121,8 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     IKeep3rV1Plus public RLR = IKeep3rV1Plus(0x5b3F693EfD5710106eb2Eac839368364aCB5a70f);
-    IWETH public constant WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    IWETH public constant WBNB = IWETH(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
     IUniswapV2Router public constant UNI = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-    iCHI public CHI = iCHI(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
 
     address public constant factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
     // this is redundant with granularity and windowSize, but stored for gas savings & informational purposes.
@@ -162,13 +146,11 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     function pairForWETH(address tokenA) external pure returns (address) {
-        return UniswapV2Library.pairFor(factory, tokenA, address(WETH));
+        return UniswapV2Library.pairFor(factory, tokenA, address(WBNB));
     }
 
     constructor(address rlrtoken) public {
         governance = msg.sender;
-        //Approve CHI for freeFromUpTo
-        require(CHI.approve(address(this), uint256(-1)));
         RLR = IKeep3rV1Plus(rlrtoken);
         //Infapprove of rlr to uniswap router
         require(RLR.approve(address(UNI), uint256(-1)));
@@ -472,23 +454,13 @@ contract RelayerV1OracleCustom is Ownable {
 
     receive() external payable {}
 
-    function _swap(uint _amount,uint chiBudget) internal returns (uint) {
+    function _swap(uint _amount) internal returns (uint) {
         address[] memory path = new address[](2);
         path[0] = address(RLR);
-        path[1] = address(WETH);
+        path[1] = address(WBNB);
         //Swap to ETH
         uint[] memory amounts = UNI.swapExactTokensForTokens(_amount, uint256(0), path, address(this), now.add(1800));
-        WETH.withdraw(amounts[1]);
-
-        //Swap the 10% of RLR to CHI
-        address[] memory pathtoChi = new address[](3);
-
-        pathtoChi[0] = address(RLR);
-        pathtoChi[1] = address(WETH);
-        pathtoChi[2] = address(CHI);
-        //Swap to CHI
-        UNI.swapExactTokensForTokens(chiBudget, uint256(0), pathtoChi, address(this), now.add(1800));
-
+        WBNB.withdraw(amounts[1]);
         return amounts[1];
     }
 
@@ -518,8 +490,6 @@ contract RelayerV1OracleCustom is Ownable {
      if (currETHCreds > 0) {
         RLR.receiptETH(owner(),currETHCreds);
      }
-     //Send out chi balance
-     recoverERC20(address(CHI));
      //Finally self destruct the contract after sending the credits
      selfdestruct(payable(owner()));
     }
