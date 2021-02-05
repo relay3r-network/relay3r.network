@@ -40,7 +40,7 @@ module.exports = async function (deployer) {
     //Deploy RelayerV1OracleCustom
     await deployer.deploy(RelayerV1OracleCustom, RelayerTokenD.address);
     const RelayerV1OracleCustomJob = await RelayerV1OracleCustom.deployed();
-
+/*
     //Deploy UnitradeJob
     await deployer.deploy(UnitradeExecutorRLRV7, RelayerTokenD.address);
     const UnitradeJob = await UnitradeExecutorRLRV7.deployed();
@@ -52,10 +52,9 @@ module.exports = async function (deployer) {
       Addrs.GetBackETHHelperV2[1]
     );
     const GetBackETHRelayerJob = await GetBackETHRelayer.deployed();
+*/
     //Add to jobs on keeper token
     await RelayerTokenD.addJob(RelayerV1OracleCustomJob.address);
-    await RelayerTokenD.addJob(UnitradeJob.address);
-    await RelayerTokenD.addJob(GetBackETHRelayerJob.address);
 
     //Deploy keeper job registry
     await deployer.deploy(Keep3rV1JobRegistry);
@@ -69,34 +68,10 @@ module.exports = async function (deployer) {
       "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/RelayerV1OracleJob.js"
     );
 
-    //Add to registry
-    await KeeperJobRegistryD.add(
-      GetBackETHRelayerJob.address,
-      "GetBackETHRelayer",
-      "",
-      "https://github.com/relay3r-network/relay3r-jobs/blob/new-combined/src/jobs/relayer/GetBackETHRelayerJob.js"
-    );
-    await KeeperJobRegistryD.add(
-      UnitradeJob.address,
-      "UnitradeExecutorRLRV7",
-      "",
-      "https://github.com/relay3r-network/relay3r-jobs/blob/main/src/jobs/unitraderelay3r.js"
-    );
-
-    //Add 5 RLR on Unitrade Job
-    await RelayerTokenD.addRLRCredit(
-      UnitradeJob.address,
-      Web3.utils.toWei("150", "ether")
-    );
-    //Add 12 RLR on GetBackETHRelayerJob Job
-    await RelayerTokenD.addRLRCredit(
-      GetBackETHRelayerJob.address,
-      Web3.utils.toWei("150", "ether")
-    );
     //Add 50 RLR on RelayerV1OracleCustom Job
     await RelayerTokenD.addRLRCredit(
       RelayerV1OracleCustomJob.address,
-      Web3.utils.toWei("50", "ether")
+      Web3.utils.toWei("500", "ether")
     );
 
     //Deploy helper

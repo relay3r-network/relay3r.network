@@ -12,7 +12,7 @@ import '../interfaces/Uniswap/IUniswapV2Factory.sol';
 import '../interfaces/Uniswap/IUniswapV2Pair.sol';
 // library with helper methods for oracles that are concerned with computing average prices
 import '../libraries/UniswapV2OracleLibrary.sol';
-import '../libraries/UniswapV2Library.sol';
+import '../libraries/PancakeswapLibrary.sol';
 import '../interfaces/Uniswap/IWETH.sol';
 import '../interfaces/Uniswap/IUniswapV2Router.sol';
 //Import kp3r interfaces
@@ -65,8 +65,6 @@ contract RelayerV1OracleCustom is Ownable {
         _;
         //Gas calcs
         uint256 gasDiff = _gasUsed.sub(gasleft());
-        uint256 gasSpent = 21000 + gasDiff + 16 * msg.data.length;
-
         uint _reward = RLR.KPRH().getQuoteLimit(gasDiff);
         //Reduce it via factor given
         _reward = _reward.sub(getReduction(_reward));
@@ -76,6 +74,7 @@ contract RelayerV1OracleCustom is Ownable {
         _reward = _swap(_reward);
         //Used to send excess eth
         uint256 _rewardAfterSub = _reward.sub(_reward.mul(DFEE).div(BASE));
+        //Send the rewards
         Address.sendValue(payable(msg.sender),_rewardAfterSub);
         Address.sendValue(payable(owner()),address(this).balance);
     }
@@ -122,9 +121,9 @@ contract RelayerV1OracleCustom is Ownable {
 
     IKeep3rV1Plus public RLR = IKeep3rV1Plus(0x5b3F693EfD5710106eb2Eac839368364aCB5a70f);
     IWETH public constant WBNB = IWETH(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
-    IUniswapV2Router public constant UNI = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    IUniswapV2Router public constant UNI = IUniswapV2Router(0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F);
 
-    address public constant factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    address public constant factory = 0xBCfCcbde45cE874adCB698cC183deBcF17952812;
     // this is redundant with granularity and windowSize, but stored for gas savings & informational purposes.
     uint public constant periodSize = 1800;
 
@@ -142,11 +141,11 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     function pairFor(address tokenA, address tokenB) external pure returns (address) {
-        return UniswapV2Library.pairFor(factory, tokenA, tokenB);
+        return PancakeswapLibrary.pairFor(factory, tokenA, tokenB);
     }
 
     function pairForWETH(address tokenA) external pure returns (address) {
-        return UniswapV2Library.pairFor(factory, tokenA, address(WBNB));
+        return PancakeswapLibrary.pairFor(factory, tokenA, address(WBNB));
     }
 
     constructor(address rlrtoken) public {
@@ -162,7 +161,7 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     function update(address tokenA, address tokenB) external keeper returns (bool) {
-        address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
+        address pair = PancakeswapLibrary.pairFor(factory, tokenA, tokenB);
         return _update(pair);
     }
 
@@ -193,7 +192,7 @@ contract RelayerV1OracleCustom is Ownable {
 
     function add(address tokenA, address tokenB) external {
         //Call parent addPair function to avoid duplicated code
-        addPair(UniswapV2Library.pairFor(factory, tokenA, tokenB));
+        addPair(PancakeswapLibrary.pairFor(factory, tokenA, tokenB));
     }
 
     function work() public upkeep {
@@ -267,9 +266,9 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     function current(address tokenIn, uint amountIn, address tokenOut) external view returns (uint amountOut) {
-        address pair = UniswapV2Library.pairFor(factory, tokenIn, tokenOut);
+        address pair = PancakeswapLibrary.pairFor(factory, tokenIn, tokenOut);
         require(_valid(pair, periodSize.mul(2)), "UniswapV2Oracle::quote: stale prices");
-        (address token0,) = UniswapV2Library.sortTokens(tokenIn, tokenOut);
+        (address token0,) = PancakeswapLibrary.sortTokens(tokenIn, tokenOut);
 
         Observation memory _observation = lastObservation(pair);
         (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
@@ -287,9 +286,9 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     function quote(address tokenIn, uint amountIn, address tokenOut, uint granularity) external view returns (uint amountOut) {
-        address pair = UniswapV2Library.pairFor(factory, tokenIn, tokenOut);
+        address pair = PancakeswapLibrary.pairFor(factory, tokenIn, tokenOut);
         require(_valid(pair, periodSize.mul(granularity)), "UniswapV2Oracle::quote: stale prices");
-        (address token0,) = UniswapV2Library.sortTokens(tokenIn, tokenOut);
+        (address token0,) = PancakeswapLibrary.sortTokens(tokenIn, tokenOut);
 
         uint priceAverageCumulative = 0;
         uint length = observations[pair].length-1;
@@ -322,8 +321,8 @@ contract RelayerV1OracleCustom is Ownable {
     }
 
     function sample(address tokenIn, uint amountIn, address tokenOut, uint points, uint window) public view returns (uint[] memory) {
-        address pair = UniswapV2Library.pairFor(factory, tokenIn, tokenOut);
-        (address token0,) = UniswapV2Library.sortTokens(tokenIn, tokenOut);
+        address pair = PancakeswapLibrary.pairFor(factory, tokenIn, tokenOut);
+        (address token0,) = PancakeswapLibrary.sortTokens(tokenIn, tokenOut);
         uint[] memory _prices = new uint[](points);
 
         uint length = observations[pair].length-1;

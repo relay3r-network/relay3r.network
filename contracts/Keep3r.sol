@@ -5,12 +5,10 @@ import "./libraries/ReentrancyGuard.sol";
 import "./libraries/Keep3rV1Library.sol";
 
 import "./interfaces/Keep3r/IKeep3rV1Helper.sol";
+
 interface IGovernance {
     function proposeJob(address job) external;
 }
-
-
-// File: contracts/Keep3r.sol
 
 pragma solidity ^0.6.6;
 contract Relay3rV3 is ReentrancyGuard {

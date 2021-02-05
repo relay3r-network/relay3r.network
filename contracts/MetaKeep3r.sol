@@ -85,7 +85,7 @@ contract MetaKeep3r {
 
     IKeep3rV1 public constant KP3R = IKeep3rV1(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);
     WETH9 public constant WETH = WETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IUniswapV2Router public constant UNI = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    IUniswapV2Router public constant UNI = IUniswapV2Router(0x5b3F693EfD5710106eb2Eac839368364aCB5a70f);
 
     function unbond() external {
         require(KP3R.unbondings(address(this), address(KP3R)) < now, "MetaKeep3r::unbond: unbonding");
